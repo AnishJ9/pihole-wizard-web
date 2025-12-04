@@ -17,6 +17,25 @@
     --shadow: 0 4px 6px -1px rgb(0 0 0 / 0.3);
 }
 
+/* Light theme */
+[data-theme="light"] {
+    --bg: #f8fafc;
+    --bg-light: #ffffff;
+    --bg-lighter: #e2e8f0;
+    --text: #0f172a;
+    --text-muted: #64748b;
+    --border: #cbd5e1;
+    --shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);
+}
+
+[data-theme="light"] .log-output {
+    background: #1e293b;
+}
+
+[data-theme="light"] .loading-overlay {
+    background: rgba(248, 250, 252, 0.9);
+}
+
 * {
     margin: 0;
     padding: 0;
@@ -406,8 +425,104 @@ body {
     animation: spin 0.8s linear infinite;
 }
 
+.spinner-small {
+    width: 1rem;
+    height: 1rem;
+    border-width: 2px;
+}
+
 @keyframes spin {
     to { transform: rotate(360deg); }
+}
+
+/* Button loading state */
+.btn.loading {
+    position: relative;
+    color: transparent !important;
+    pointer-events: none;
+}
+
+.btn.loading::after {
+    content: '';
+    position: absolute;
+    width: 1rem;
+    height: 1rem;
+    border: 2px solid currentColor;
+    border-top-color: transparent;
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%);
+}
+
+.btn-primary.loading::after {
+    border-color: rgba(255, 255, 255, 0.3);
+    border-top-color: white;
+}
+
+.btn-secondary.loading::after {
+    border-color: var(--border);
+    border-top-color: var(--text);
+}
+
+/* Skeleton loading */
+.skeleton {
+    background: linear-gradient(90deg, var(--bg-lighter) 25%, var(--bg-light) 50%, var(--bg-lighter) 75%);
+    background-size: 200% 100%;
+    animation: skeleton-loading 1.5s infinite;
+    border-radius: var(--radius);
+}
+
+.skeleton-text {
+    height: 1rem;
+    margin-bottom: 0.5rem;
+}
+
+.skeleton-text:last-child {
+    width: 60%;
+}
+
+.skeleton-card {
+    height: 80px;
+    margin-bottom: 1rem;
+}
+
+@keyframes skeleton-loading {
+    0% { background-position: 200% 0; }
+    100% { background-position: -200% 0; }
+}
+
+/* Loading overlay */
+.loading-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(15, 23, 42, 0.8);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    z-index: 2000;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.2s;
+}
+
+.loading-overlay.active {
+    opacity: 1;
+    pointer-events: auto;
+}
+
+.loading-overlay .spinner {
+    width: 3rem;
+    height: 3rem;
+    border-width: 3px;
+    margin-bottom: 1rem;
+}
+
+.loading-overlay p {
+    color: var(--text);
+    font-size: 1rem;
 }
 
 /* Option Cards */
@@ -581,6 +696,85 @@ body {
 
 .toggle-label {
     font-weight: 500;
+}
+
+/* Blocklist Cards */
+.blocklists-section h3 {
+    font-size: 1.125rem;
+    margin-bottom: 0.5rem;
+}
+
+.blocklist-grid {
+    display: grid;
+    gap: 0.75rem;
+}
+
+.blocklist-card {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.75rem;
+    padding: 1rem;
+    background: var(--bg-light);
+    border: 2px solid var(--border);
+    border-radius: var(--radius);
+    cursor: pointer;
+    transition: all 0.15s ease;
+}
+
+.blocklist-card:hover {
+    border-color: var(--primary);
+}
+
+.blocklist-card:has(input:checked) {
+    border-color: var(--primary);
+    background: rgba(59, 130, 246, 0.1);
+}
+
+.blocklist-card input[type="checkbox"] {
+    width: 1.25rem;
+    height: 1.25rem;
+    margin-top: 0.125rem;
+    accent-color: var(--primary);
+    cursor: pointer;
+}
+
+.blocklist-content {
+    flex: 1;
+}
+
+.blocklist-header {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-bottom: 0.25rem;
+}
+
+.blocklist-header strong {
+    font-size: 0.9375rem;
+}
+
+.blocklist-badge {
+    font-size: 0.6875rem;
+    padding: 0.125rem 0.5rem;
+    border-radius: 4px;
+    font-weight: 600;
+    text-transform: uppercase;
+}
+
+.blocklist-badge.default {
+    background: var(--primary);
+    color: white;
+}
+
+.blocklist-badge.popular {
+    background: var(--success);
+    color: white;
+}
+
+.blocklist-card p {
+    font-size: 0.8125rem;
+    color: var(--text-muted);
+    line-height: 1.4;
 }
 
 /* Info/Warning Boxes */

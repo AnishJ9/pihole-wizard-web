@@ -6,6 +6,7 @@ class WizardApp {
     constructor() {
         this.currentStep = 1;
         this.totalSteps = 7;
+        this.theme = localStorage.getItem('theme') || 'dark';
         this.state = {
             deployment: 'docker',
             os: null,
@@ -20,6 +21,17 @@ class WizardApp {
             dhcp_end: null,
             dhcp_router: null,
             custom_dns: null,
+            blocklists: ['stevenblack'],
+        };
+
+        // Blocklist URLs mapping
+        this.blocklistUrls = {
+            'stevenblack': 'https://raw.githubusercontent.com/StevenBlack/hosts/master/hosts',
+            'oisd': 'https://big.oisd.nl/domainswild',
+            'hagezi': 'https://raw.githubusercontent.com/hagezi/dns-blocklists/main/wildcard/pro.txt',
+            'firebog-ticked': 'https://v.firebog.net/hosts/lists.php?type=tick',
+            'adguard-dns': 'https://adguardteam.github.io/AdGuardSDNSFilter/Filters/filter.txt',
+            'nocoin': 'https://raw.githubusercontent.com/hoshsadiq/adblock-nocoin-list/master/hosts.txt',
         };
         this.configPreview = null;
         this.installWs = null;
@@ -28,10 +40,58 @@ class WizardApp {
     }
 
     async init() {
+        this.applyTheme();
         this.bindEvents();
         await this.loadSavedState();
         this.updateUI();
         await this.runPrerequisiteChecks();
+    }
+
+    // Theme management
+    applyTheme() {
+        document.documentElement.setAttribute('data-theme', this.theme);
+        this.updateThemeIcon();
+    }
+
+    toggleTheme() {
+        this.theme = this.theme === 'dark' ? 'light' : 'dark';
+        localStorage.setItem('theme', this.theme);
+        this.applyTheme();
+    }
+
+    updateThemeIcon() {
+        const darkIcon = document.getElementById('themeIconDark');
+        const lightIcon = document.getElementById('themeIconLight');
+        if (this.theme === 'dark') {
+            darkIcon.style.display = 'block';
+            lightIcon.style.display = 'none';
+        } else {
+            darkIcon.style.display = 'none';
+            lightIcon.style.display = 'block';
+        }
+    }
+
+    // Loading states
+    showLoading(message = 'Loading...') {
+        document.getElementById('loadingText').textContent = message;
+        document.getElementById('loadingOverlay').classList.add('active');
+    }
+
+    hideLoading() {
+        document.getElementById('loadingOverlay').classList.remove('active');
+    }
+
+    setButtonLoading(buttonId, loading = true) {
+        const btn = document.getElementById(buttonId);
+        if (btn) {
+            if (loading) {
+                btn.classList.add('loading');
+                btn.disabled = true;
+            } else {
+                btn.classList.remove('loading');
+                btn.disabled = false;
+            }
+        }
     }
 
     bindEvents() {
@@ -52,6 +112,9 @@ class WizardApp {
         document.getElementById('modalOverlay').addEventListener('click', () => this.closeUpdateModal());
         document.getElementById('checkUpdateBtn').addEventListener('click', () => this.checkForUpdates());
         document.getElementById('startUpdateBtn').addEventListener('click', () => this.startUpdate());
+
+        // Theme toggle
+        document.getElementById('themeToggle').addEventListener('click', () => this.toggleTheme());
 
         // Step indicators
         document.querySelectorAll('.step').forEach(step => {
@@ -359,6 +422,10 @@ class WizardApp {
                     this.state.custom_dns = document.getElementById('customDnsInput').value;
                 }
             }
+            // Collect selected blocklists
+            this.state.blocklists = Array.from(
+                document.querySelectorAll('input[name="blocklist"]:checked')
+            ).map(cb => cb.value);
         } else if (step === 5) {
             this.state.dhcp_enabled = document.getElementById('dhcpEnabled').checked;
             if (this.state.dhcp_enabled) {
@@ -431,11 +498,24 @@ class WizardApp {
         const table = document.getElementById('summaryTable').querySelector('tbody');
         table.innerHTML = '';
 
+        // Blocklist names mapping
+        const blocklistNames = {
+            'stevenblack': 'StevenBlack Unified',
+            'oisd': 'OISD Big',
+            'hagezi': 'Hagezi Multi Pro',
+            'firebog-ticked': 'Firebog Ticked',
+            'adguard-dns': 'AdGuard DNS',
+            'nocoin': 'NoCoin + Malware',
+        };
+
         const rows = [
             ['Deployment', this.state.deployment === 'docker' ? 'Docker' : 'Bare Metal'],
             ['Pi-hole IP', this.state.pihole_ip || 'Not set'],
             ['DNS Resolver', this.state.enable_unbound ? 'Unbound (Recursive)' : this.state.upstream_dns],
             ['IPv6', this.state.ipv6 ? 'Enabled' : 'Disabled'],
+            ['Blocklists', this.state.blocklists.length > 0
+                ? this.state.blocklists.map(id => blocklistNames[id] || id).join(', ')
+                : 'Default only'],
             ['DHCP Server', this.state.dhcp_enabled ? 'Enabled' : 'Disabled'],
             ['Web Password', this.state.web_password ? 'Set' : 'Not set'],
         ];
@@ -579,6 +659,7 @@ class WizardApp {
 
     // Export/Import functionality
     async exportConfig() {
+        this.setButtonLoading('exportBtn', true);
         try {
             // Collect current form data first
             this.collectFormData();
@@ -600,6 +681,8 @@ class WizardApp {
             alert('Configuration exported successfully!');
         } catch (e) {
             alert('Export failed: ' + e.message);
+        } finally {
+            this.setButtonLoading('exportBtn', false);
         }
     }
 
@@ -607,6 +690,7 @@ class WizardApp {
         const file = event.target.files[0];
         if (!file) return;
 
+        this.showLoading('Importing configuration...');
         try {
             const text = await file.text();
             const configData = JSON.parse(text);
@@ -622,6 +706,7 @@ class WizardApp {
             // Reset file input
             event.target.value = '';
 
+            this.hideLoading();
             alert('Configuration imported successfully!' +
                   (configData._note ? '\n\nNote: ' + configData._note : ''));
 
@@ -629,6 +714,7 @@ class WizardApp {
             this.currentStep = 1;
             this.updateUI();
         } catch (e) {
+            this.hideLoading();
             alert('Import failed: ' + e.message);
             event.target.value = '';
         }
@@ -671,6 +757,11 @@ class WizardApp {
         if (this.state.dhcp_router) {
             document.getElementById('dhcpRouter').value = this.state.dhcp_router;
         }
+
+        // Blocklists
+        document.querySelectorAll('input[name="blocklist"]').forEach(cb => {
+            cb.checked = this.state.blocklists.includes(cb.value);
+        });
 
         // Update UI states
         this.updateDeploymentUI();

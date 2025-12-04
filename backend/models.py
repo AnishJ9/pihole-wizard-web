@@ -42,6 +42,7 @@ class WizardState(BaseModel):
     dhcp_end: Optional[str] = None
     dhcp_router: Optional[str] = None
     custom_dns: Optional[str] = None
+    blocklists: List[str] = []  # Selected blocklist preset IDs
 
 
 class PrerequisiteCheck(BaseModel):
