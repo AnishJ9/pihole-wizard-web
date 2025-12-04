@@ -39,33 +39,39 @@ is_raspberry_pi() {
     return 1
 }
 
-# If not on a Pi, offer to scan for one
+# If not on a Pi, offer options
 if ! is_raspberry_pi; then
     echo -e "${YELLOW}══════════════════════════════════════════════════════════${NC}"
     echo -e "${YELLOW}  It looks like you're not on a Raspberry Pi.${NC}"
     echo -e "${YELLOW}══════════════════════════════════════════════════════════${NC}"
     echo ""
     echo -e "  Pi-hole Wizard is designed to run on a Raspberry Pi."
-    echo -e "  Would you like to:"
+    echo -e "  What would you like to do?"
     echo ""
-    echo -e "  ${CYAN}[1]${NC} Find my Raspberry Pi on this network"
-    echo -e "  ${CYAN}[2]${NC} Install here anyway (for testing/other Linux)"
+    echo -e "  ${CYAN}[1]${NC} Connect to my Raspberry Pi now (SSH)"
+    echo -e "  ${CYAN}[2]${NC} Continue anyway (I know what I'm doing)"
+    echo -e "  ${CYAN}[3]${NC} Exit"
     echo ""
-    echo -n "  Enter choice [1/2]: "
+    echo -n "  Enter choice [1/2/3]: "
     read -r choice
     echo ""
 
-    if [ "$choice" = "1" ]; then
-        echo -e "${BLUE}Launching Pi scanner...${NC}"
-        echo ""
-        exec bash <(curl -sSL https://pihole-wizard.com/scan.sh)
-        exit 0
-    elif [ "$choice" != "2" ]; then
-        echo -e "${YELLOW}Invalid choice. Exiting.${NC}"
-        exit 1
-    fi
-    echo -e "${YELLOW}Continuing with installation on this device...${NC}"
-    echo ""
+    case "$choice" in
+        1)
+            echo -e "${BLUE}Scanning for Raspberry Pi devices...${NC}"
+            echo ""
+            exec bash <(curl -sSL https://pihole-wizard.com/scan.sh)
+            exit 0
+            ;;
+        2)
+            echo -e "${YELLOW}Continuing with installation on this device...${NC}"
+            echo ""
+            ;;
+        3|*)
+            echo -e "${BLUE}Exiting. Run this command on your Raspberry Pi to install.${NC}"
+            exit 0
+            ;;
+    esac
 fi
 
 # Check if running as root
