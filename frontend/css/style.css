@@ -212,6 +212,33 @@ body {
     color: var(--text);
 }
 
+/* Security Notice Banner */
+.security-banner {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.75rem 2rem;
+    background: rgba(59, 130, 246, 0.1);
+    border-bottom: 1px solid rgba(59, 130, 246, 0.2);
+}
+
+.security-banner-content {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    font-size: 0.875rem;
+    color: var(--text-muted);
+}
+
+.security-banner-content svg {
+    color: var(--primary);
+    flex-shrink: 0;
+}
+
+.security-banner-content strong {
+    color: var(--text);
+}
+
 /* Progress Stepper */
 .progress-container {
     padding: 1.5rem 2rem;

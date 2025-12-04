@@ -210,6 +210,18 @@ class WizardApp {
             localStorage.setItem('bannerDismissed', 'true');
         });
 
+        // Dismiss security banner
+        document.getElementById('dismissSecurityBanner')?.addEventListener('click', () => {
+            document.getElementById('securityBanner').style.display = 'none';
+            localStorage.setItem('securityBannerDismissed', 'true');
+        });
+
+        // Hide security banner if already dismissed
+        if (localStorage.getItem('securityBannerDismissed') === 'true') {
+            const securityBanner = document.getElementById('securityBanner');
+            if (securityBanner) securityBanner.style.display = 'none';
+        }
+
         // Config tabs
         document.querySelectorAll('.tab').forEach(tab => {
             tab.addEventListener('click', () => {
