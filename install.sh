@@ -57,6 +57,7 @@ if ! is_raspberry_pi; then
     echo -e "  ${CYAN}[1]${NC} Connect to my Raspberry Pi now (SSH)"
     echo -e "  ${CYAN}[2]${NC} Continue anyway (I know what I'm doing)"
     echo -e "  ${CYAN}[3]${NC} Exit"
+    echo -e "  ${CYAN}[h]${NC} Get help (opens AI assistant in browser)"
     echo ""
     echo -e "  ${YELLOW}Learn more:${NC}"
     echo -e "  • Pi-hole Wizard: ${BLUE}https://github.com/AnishJ9/pihole-wizard-web${NC}"
@@ -64,7 +65,7 @@ if ! is_raspberry_pi; then
     echo -e "  • Pi-hole GitHub: ${BLUE}https://github.com/pi-hole/pi-hole${NC}"
     echo -e "  • Pi-hole Forum:  ${BLUE}https://discourse.pi-hole.net${NC}"
     echo ""
-    echo -n "  Enter choice [1/2/3]: "
+    echo -n "  Enter choice [1/2/3/h]: "
     read -r choice < /dev/tty
     echo ""
 
@@ -78,6 +79,20 @@ if ! is_raspberry_pi; then
         2)
             echo -e "${YELLOW}Continuing with installation on this device...${NC}"
             echo ""
+            ;;
+        h|H)
+            echo -e "${BLUE}Opening AI assistant in your browser...${NC}"
+            echo -e "Get help at: ${GREEN}https://pihole-wizard.com/#ai-help${NC}"
+            echo ""
+            # Try to open browser
+            if command -v xdg-open &> /dev/null; then
+                xdg-open "https://pihole-wizard.com/#ai-help" 2>/dev/null &
+            elif command -v open &> /dev/null; then
+                open "https://pihole-wizard.com/#ai-help" 2>/dev/null &
+            fi
+            echo -e "Press Enter to continue when you're ready..."
+            read -r < /dev/tty
+            exec bash <(curl -sSL https://pihole-wizard.com/install.sh)
             ;;
         3|*)
             echo -e "${BLUE}Exiting. Run this command on your Raspberry Pi to install.${NC}"
