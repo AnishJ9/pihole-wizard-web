@@ -173,13 +173,38 @@ if [ ${#FOUND_PIS[@]} -eq 0 ]; then
     echo -e "  • Pi has a non-standard MAC address"
     echo -e "  • Pi hostname was changed from default"
     echo ""
-    echo -e "  ${CYAN}Try manually:${NC}"
+    echo -e "  ${CYAN}How to find your Pi's IP:${NC}"
     echo -e "  • Check your router's admin page for connected devices"
     echo -e "  • Look for a device named 'raspberrypi' or similar"
+    echo -e "  • Or run 'hostname -I' on your Pi directly"
     echo ""
-    echo -e "  ${CYAN}Or if you know your Pi's IP, connect directly:${NC}"
-    echo -e "  ${GREEN}ssh pi@<YOUR_PI_IP>${NC}"
+    echo -e "  ${CYAN}Enter your Pi's IP address (or 'q' to quit):${NC}"
+    echo -n "  IP: "
+    read -r manual_ip < /dev/tty
     echo ""
+
+    if [ "$manual_ip" = "q" ] || [ "$manual_ip" = "Q" ] || [ -z "$manual_ip" ]; then
+        echo -e "${BLUE}Exiting. Run this command on your Pi to install:${NC}"
+        echo -e "${GREEN}curl -sSL https://pihole-wizard.com/install.sh | bash${NC}"
+        exit 0
+    fi
+
+    # Validate IP format (basic check)
+    if [[ "$manual_ip" =~ ^[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}$ ]]; then
+        echo -e "${GREEN}══════════════════════════════════════════════════════════${NC}"
+        echo -e "${GREEN}  Connecting to $manual_ip...${NC}"
+        echo -e "${GREEN}══════════════════════════════════════════════════════════${NC}"
+        echo ""
+        echo -e "  ${YELLOW}Default username:${NC} pi"
+        echo -e "  ${YELLOW}Default password:${NC} raspberry (change it after!)"
+        echo ""
+        echo -e "  ${BLUE}Once connected, the installer will run automatically.${NC}"
+        echo ""
+        exec ssh -t "pi@$manual_ip" "curl -sSL https://pihole-wizard.com/install.sh | bash" < /dev/tty
+    else
+        echo -e "${RED}Invalid IP address format. Please try again.${NC}"
+        exit 1
+    fi
 else
     echo -e "${GREEN}══════════════════════════════════════════════════════════${NC}"
     echo -e "${GREEN}  Found ${#FOUND_PIS[@]} Raspberry Pi device(s)!${NC}"
