@@ -24,15 +24,21 @@ echo ""
 
 # Check if running on a Raspberry Pi
 is_raspberry_pi() {
-    # Check for Raspberry Pi model file
+    # Method 1: Check device-tree model (most reliable)
     if [ -f /proc/device-tree/model ]; then
         if grep -qi "raspberry pi" /proc/device-tree/model 2>/dev/null; then
             return 0
         fi
     fi
-    # Check cpuinfo for Raspberry Pi
+    # Method 2: Check device-tree compatible (works for Pi 5 with bcm2712)
+    if [ -f /proc/device-tree/compatible ]; then
+        if grep -qi "raspberrypi\|bcm2712\|bcm2711\|bcm2837\|bcm2836\|bcm2835" /proc/device-tree/compatible 2>/dev/null; then
+            return 0
+        fi
+    fi
+    # Method 3: Check cpuinfo (fallback)
     if [ -f /proc/cpuinfo ]; then
-        if grep -qi "raspberry pi\|BCM2" /proc/cpuinfo 2>/dev/null; then
+        if grep -qi "raspberry pi" /proc/cpuinfo 2>/dev/null; then
             return 0
         fi
     fi
