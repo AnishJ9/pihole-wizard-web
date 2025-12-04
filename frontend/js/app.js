@@ -94,6 +94,38 @@ class WizardApp {
         }
     }
 
+    // Keyboard navigation
+    handleKeyboard(e) {
+        // Don't navigate if user is typing in an input
+        const activeEl = document.activeElement;
+        if (activeEl.tagName === 'INPUT' || activeEl.tagName === 'TEXTAREA' || activeEl.tagName === 'SELECT') {
+            return;
+        }
+
+        // Don't navigate if modal is open
+        if (document.getElementById('updateModal').style.display === 'block' ||
+            document.getElementById('chatSidebar').classList.contains('open')) {
+            return;
+        }
+
+        // Don't navigate during install or success screens
+        if (document.getElementById('installProgress').classList.contains('active') ||
+            document.getElementById('successScreen').classList.contains('active')) {
+            return;
+        }
+
+        if (e.key === 'ArrowRight' || e.key === 'ArrowDown') {
+            e.preventDefault();
+            this.nextStep();
+        } else if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') {
+            e.preventDefault();
+            this.prevStep();
+        } else if (e.key === 'Enter') {
+            e.preventDefault();
+            this.nextStep();
+        }
+    }
+
     bindEvents() {
         // Navigation
         document.getElementById('nextBtn').addEventListener('click', () => this.nextStep());
@@ -115,6 +147,9 @@ class WizardApp {
 
         // Theme toggle
         document.getElementById('themeToggle').addEventListener('click', () => this.toggleTheme());
+
+        // Keyboard navigation
+        document.addEventListener('keydown', (e) => this.handleKeyboard(e));
 
         // Step indicators
         document.querySelectorAll('.step').forEach(step => {
@@ -183,6 +218,10 @@ class WizardApp {
                 this.showConfigTab(tab.dataset.tab);
             });
         });
+
+        // Copy buttons
+        document.getElementById('copyConfigBtn').addEventListener('click', () => this.copyConfig());
+        document.getElementById('copyCommandsBtn').addEventListener('click', () => this.copyCommands());
 
         // Download configs
         document.getElementById('downloadBtn').addEventListener('click', () => this.downloadConfigs());
@@ -567,6 +606,45 @@ class WizardApp {
         Prism.highlightElement(code);
     }
 
+    async copyToClipboard(text, button) {
+        try {
+            await navigator.clipboard.writeText(text);
+
+            // Show success state
+            const copyIcon = button.querySelector('.copy-icon') || button.querySelector('#copyIcon');
+            const checkIcon = button.querySelector('.check-icon') || button.querySelector('#copyCheckIcon');
+            const copyText = button.querySelector('.copy-text') || button.querySelector('#copyConfigText');
+
+            button.classList.add('copied');
+            if (copyIcon) copyIcon.style.display = 'none';
+            if (checkIcon) checkIcon.style.display = 'block';
+            if (copyText) copyText.textContent = 'Copied!';
+
+            // Reset after 2 seconds
+            setTimeout(() => {
+                button.classList.remove('copied');
+                if (copyIcon) copyIcon.style.display = 'block';
+                if (checkIcon) checkIcon.style.display = 'none';
+                if (copyText) copyText.textContent = 'Copy';
+            }, 2000);
+        } catch (err) {
+            console.error('Failed to copy:', err);
+            alert('Failed to copy to clipboard');
+        }
+    }
+
+    copyConfig() {
+        const code = document.getElementById('configPreview').querySelector('code');
+        const text = code.textContent;
+        this.copyToClipboard(text, document.getElementById('copyConfigBtn'));
+    }
+
+    copyCommands() {
+        const code = document.getElementById('commandsPreview').querySelector('code');
+        const text = code.textContent;
+        this.copyToClipboard(text, document.getElementById('copyCommandsBtn'));
+    }
+
     async downloadConfigs() {
         try {
             const blob = await API.downloadConfig(this.state);
@@ -655,6 +733,73 @@ class WizardApp {
         const dashboardLink = document.getElementById('dashboardLink');
         dashboardLink.href = `http://${this.state.pihole_ip}/admin`;
         dashboardLink.textContent = `http://${this.state.pihole_ip}/admin`;
+
+        // Trigger confetti
+        this.launchConfetti();
+    }
+
+    launchConfetti() {
+        const canvas = document.getElementById('confettiCanvas');
+        const ctx = canvas.getContext('2d');
+
+        // Set canvas size
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+
+        const confettiColors = ['#3b82f6', '#22c55e', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899'];
+        const confettiCount = 150;
+        const confetti = [];
+
+        // Create confetti particles
+        for (let i = 0; i < confettiCount; i++) {
+            confetti.push({
+                x: Math.random() * canvas.width,
+                y: Math.random() * canvas.height - canvas.height,
+                w: Math.random() * 10 + 5,
+                h: Math.random() * 6 + 3,
+                color: confettiColors[Math.floor(Math.random() * confettiColors.length)],
+                speed: Math.random() * 3 + 2,
+                angle: Math.random() * 360,
+                spin: (Math.random() - 0.5) * 10,
+                drift: (Math.random() - 0.5) * 2,
+            });
+        }
+
+        let animationFrame;
+        const animate = () => {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            let activeConfetti = 0;
+            confetti.forEach(c => {
+                if (c.y < canvas.height + 20) {
+                    activeConfetti++;
+                    c.y += c.speed;
+                    c.x += c.drift;
+                    c.angle += c.spin;
+
+                    ctx.save();
+                    ctx.translate(c.x, c.y);
+                    ctx.rotate(c.angle * Math.PI / 180);
+                    ctx.fillStyle = c.color;
+                    ctx.fillRect(-c.w / 2, -c.h / 2, c.w, c.h);
+                    ctx.restore();
+                }
+            });
+
+            if (activeConfetti > 0) {
+                animationFrame = requestAnimationFrame(animate);
+            } else {
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+            }
+        };
+
+        animate();
+
+        // Clean up after 5 seconds
+        setTimeout(() => {
+            cancelAnimationFrame(animationFrame);
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+        }, 5000);
     }
 
     // Export/Import functionality

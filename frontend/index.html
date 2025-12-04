@@ -163,7 +163,7 @@
                                 </svg>
                             </div>
                             <div>
-                                <h3>Docker</h3>
+                                <h3><span class="tooltip-trigger" data-tooltip="A platform that runs applications in isolated 'containers'. Makes installation, updates, and removal clean and simple.">Docker</span></h3>
                                 <span class="badge recommended">Recommended</span>
                             </div>
                         </div>
@@ -213,8 +213,8 @@
                 </div>
 
                 <div class="info-box">
-                    <strong>Important:</strong> Ensure your Pi-hole host has a static IP address.
-                    If using DHCP, configure a DHCP reservation on your router for this device.
+                    <strong>Important:</strong> Ensure your Pi-hole host has a <span class="tooltip-trigger" data-tooltip="An IP address that doesn't change. Required because all devices need to know where to find Pi-hole. Set this in your OS network settings or router.">static IP address</span>.
+                    If using DHCP, configure a <span class="tooltip-trigger" data-tooltip="A router setting that always assigns the same IP address to a specific device based on its MAC address.">DHCP reservation</span> on your router for this device.
                 </div>
             </section>
 
@@ -227,11 +227,11 @@
                     <label class="toggle">
                         <input type="checkbox" id="enableUnbound" name="enable_unbound" checked>
                         <span class="toggle-slider"></span>
-                        <span class="toggle-label">Enable Unbound (Recursive DNS)</span>
+                        <span class="toggle-label">Enable <span class="tooltip-trigger" data-tooltip="A recursive DNS resolver that queries root servers directly instead of forwarding to third parties like Google or Cloudflare. Maximizes privacy.">Unbound</span> (Recursive DNS)</span>
                     </label>
                     <p class="help-text">
-                        Unbound resolves DNS queries directly from root servers, providing maximum privacy
-                        and DNSSEC validation. <strong>Recommended</strong> for most users.
+                        Unbound resolves <span class="tooltip-trigger" data-tooltip="Domain Name System - translates domain names (like google.com) into IP addresses that computers use to communicate.">DNS</span> queries directly from root servers, providing maximum privacy
+                        and <span class="tooltip-trigger" data-tooltip="DNS Security Extensions - cryptographically validates DNS responses to prevent spoofing and man-in-the-middle attacks.">DNSSEC</span> validation. <strong>Recommended</strong> for most users.
                     </p>
                 </div>
 
@@ -254,7 +254,7 @@
                     <label class="toggle">
                         <input type="checkbox" id="ipv6" name="ipv6">
                         <span class="toggle-slider"></span>
-                        <span class="toggle-label">Enable IPv6 Support</span>
+                        <span class="toggle-label">Enable <span class="tooltip-trigger" data-tooltip="Internet Protocol version 6 - the newest version of internet addressing. If your ISP supports it, devices get IPv6 addresses alongside IPv4.">IPv6</span> Support</span>
                     </label>
                     <p class="help-text">Enable if your network uses IPv6. Leave disabled if unsure.</p>
                 </div>
@@ -332,7 +332,7 @@
 
             <!-- Step 5: DHCP Configuration -->
             <section class="step-content" data-step="5">
-                <h2>DHCP Configuration</h2>
+                <h2><span class="tooltip-trigger" data-tooltip="Dynamic Host Configuration Protocol - automatically assigns IP addresses to devices on your network so you don't have to configure each one manually.">DHCP</span> Configuration</h2>
                 <p class="step-description">Optionally use Pi-hole as your DHCP server.</p>
 
                 <div class="warning-box">
@@ -344,7 +344,7 @@
                     <label class="toggle">
                         <input type="checkbox" id="dhcpEnabled" name="dhcp_enabled">
                         <span class="toggle-slider"></span>
-                        <span class="toggle-label">Enable DHCP Server</span>
+                        <span class="toggle-label">Enable <span class="tooltip-trigger" data-tooltip="When enabled, Pi-hole assigns IP addresses to devices. This ensures all devices automatically use Pi-hole for DNS, but requires disabling DHCP on your router.">DHCP Server</span></span>
                     </label>
                     <p class="help-text">Pi-hole will assign IP addresses to devices on your network.</p>
                 </div>
@@ -411,7 +411,18 @@
                 </div>
 
                 <div class="config-preview">
-                    <h3>Generated Files</h3>
+                    <div class="preview-header">
+                        <h3>Generated Files</h3>
+                        <button id="copyConfigBtn" class="btn btn-copy" title="Copy to clipboard">
+                            <svg id="copyIcon" viewBox="0 0 24 24" fill="currentColor" width="16" height="16">
+                                <path d="M16 1H4c-1.1 0-2 .9-2 2v14h2V3h12V1zm3 4H8c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm0 16H8V7h11v14z"/>
+                            </svg>
+                            <svg id="copyCheckIcon" viewBox="0 0 24 24" fill="currentColor" width="16" height="16" style="display: none;">
+                                <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/>
+                            </svg>
+                            <span id="copyConfigText">Copy</span>
+                        </button>
+                    </div>
                     <div class="tabs">
                         <button class="tab active" data-tab="docker-compose">docker-compose.yml</button>
                         <button class="tab" data-tab="env">.env</button>
@@ -423,7 +434,18 @@
                 </div>
 
                 <div class="commands-preview">
-                    <h3>Commands That Will Run</h3>
+                    <div class="preview-header">
+                        <h3>Commands That Will Run</h3>
+                        <button id="copyCommandsBtn" class="btn btn-copy" title="Copy to clipboard">
+                            <svg class="copy-icon" viewBox="0 0 24 24" fill="currentColor" width="16" height="16">
+                                <path d="M16 1H4c-1.1 0-2 .9-2 2v14h2V3h12V1zm3 4H8c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm0 16H8V7h11v14z"/>
+                            </svg>
+                            <svg class="check-icon" viewBox="0 0 24 24" fill="currentColor" width="16" height="16" style="display: none;">
+                                <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/>
+                            </svg>
+                            <span class="copy-text">Copy</span>
+                        </button>
+                    </div>
                     <pre id="commandsPreview"><code class="language-bash">Loading...</code></pre>
                 </div>
 
@@ -461,6 +483,7 @@
 
             <!-- Success Screen -->
             <section id="successScreen" class="step-content" style="display: none;">
+                <canvas id="confettiCanvas"></canvas>
                 <div class="success-container">
                     <div class="success-icon">
                         <svg viewBox="0 0 24 24" fill="currentColor" width="64" height="64">
