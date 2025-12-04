@@ -912,10 +912,17 @@
             if (savedKey) {
                 document.getElementById('apiKey').value = savedKey;
             }
-            // Auto-scroll to AI help if hash is #ai-help
+            // Auto-scroll to AI help if hash is #ai-help, centered in viewport
             if (window.location.hash === '#ai-help') {
-                document.getElementById('ai-help').scrollIntoView({ behavior: 'smooth' });
+                const aiSection = document.getElementById('ai-help');
+                aiSection.scrollIntoView({ behavior: 'smooth', block: 'center' });
             }
+            // Also handle if user navigates to #ai-help while on page
+            window.addEventListener('hashchange', function() {
+                if (window.location.hash === '#ai-help') {
+                    document.getElementById('ai-help').scrollIntoView({ behavior: 'smooth', block: 'center' });
+                }
+            });
         });
     </script>
 </body>
