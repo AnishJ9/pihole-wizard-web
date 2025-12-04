@@ -77,7 +77,91 @@ if ! detect_device; then
                 echo ""
                 echo -e "${BLUE}Let's connect to your Raspberry Pi!${NC}"
                 echo ""
-                read -p "Enter your Pi's IP address (e.g., 192.168.1.100): " PI_IP
+
+                # Try to find Raspberry Pi on the network
+                echo -e "${YELLOW}Scanning your network for Raspberry Pi devices...${NC}"
+                echo ""
+
+                FOUND_PIS=""
+
+                # Get local network range
+                if command -v ip &> /dev/null; then
+                    LOCAL_IP=$(ip route get 1 2>/dev/null | awk '{print $7}' | head -1)
+                elif command -v ifconfig &> /dev/null; then
+                    LOCAL_IP=$(ifconfig | grep "inet " | grep -v 127.0.0.1 | awk '{print $2}' | head -1)
+                fi
+
+                if [ -n "$LOCAL_IP" ]; then
+                    # Extract network prefix (e.g., 192.168.1)
+                    NET_PREFIX=$(echo $LOCAL_IP | cut -d. -f1-3)
+
+                    # Method 1: Check ARP table for known Pi MAC addresses (Raspberry Pi Foundation OUIs)
+                    # Pi MACs start with: b8:27:eb, dc:a6:32, e4:5f:01, d8:3a:dd
+                    if command -v arp &> /dev/null; then
+                        FOUND_PIS=$(arp -a 2>/dev/null | grep -iE "b8:27:eb|dc:a6:32|e4:5f:01|d8:3a:dd|raspberry" | grep -oE '([0-9]{1,3}\.){3}[0-9]{1,3}' | head -5)
+                    fi
+
+                    # Method 2: If arp didn't find anything, try pinging common Pi hostnames
+                    if [ -z "$FOUND_PIS" ]; then
+                        for hostname in raspberrypi raspberry pi pihole; do
+                            PI_IP_FOUND=$(ping -c 1 -W 1 $hostname 2>/dev/null | grep -oE '([0-9]{1,3}\.){3}[0-9]{1,3}' | head -1)
+                            if [ -n "$PI_IP_FOUND" ]; then
+                                FOUND_PIS="$PI_IP_FOUND"
+                                break
+                            fi
+                        done
+                    fi
+
+                    # Method 3: Quick scan of common IPs (only if we found nothing)
+                    if [ -z "$FOUND_PIS" ] && command -v ping &> /dev/null; then
+                        echo -e "${YELLOW}Checking common IP addresses...${NC}"
+                        for i in 1 2 100 101 102 50 51 150 200; do
+                            TEST_IP="${NET_PREFIX}.${i}"
+                            if ping -c 1 -W 1 "$TEST_IP" &>/dev/null; then
+                                # Check if SSH port is open (likely a Pi or server)
+                                if nc -z -w 1 "$TEST_IP" 22 2>/dev/null || \
+                                   (echo >/dev/tcp/$TEST_IP/22) 2>/dev/null; then
+                                    FOUND_PIS="${FOUND_PIS}${TEST_IP}\n"
+                                fi
+                            fi
+                        done
+                    fi
+                fi
+
+                # Show results
+                if [ -n "$FOUND_PIS" ]; then
+                    echo -e "${GREEN}Found possible Raspberry Pi device(s):${NC}"
+                    echo ""
+                    COUNT=1
+                    echo "$FOUND_PIS" | while read -r ip; do
+                        if [ -n "$ip" ]; then
+                            echo -e "  ${GREEN}$COUNT)${NC} $ip"
+                            COUNT=$((COUNT + 1))
+                        fi
+                    done
+                    echo ""
+                    echo -e "  ${GREEN}m)${NC} Enter IP manually"
+                    echo ""
+                    read -p "Choose an option: " PI_CHOICE
+
+                    if [ "$PI_CHOICE" = "m" ] || [ "$PI_CHOICE" = "M" ]; then
+                        read -p "Enter your Pi's IP address: " PI_IP
+                    else
+                        PI_IP=$(echo "$FOUND_PIS" | sed -n "${PI_CHOICE}p")
+                    fi
+                else
+                    echo -e "${YELLOW}Couldn't auto-detect your Pi.${NC}"
+                    echo ""
+                    echo -e "Your Pi's IP is usually something like: ${BLUE}${NET_PREFIX}.X${NC}"
+                    echo ""
+                    echo -e "To find it, you can:"
+                    echo -e "  • Check your router's admin page for connected devices"
+                    echo -e "  • Look at your Pi's screen (if connected) - run ${BLUE}hostname -I${NC}"
+                    echo -e "  • Use a network scanner app on your phone"
+                    echo ""
+                    read -p "Enter your Pi's IP address: " PI_IP
+                fi
+
                 if [ -z "$PI_IP" ]; then
                     echo -e "${RED}No IP address entered. Exiting.${NC}"
                     exit 1
