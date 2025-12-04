@@ -297,16 +297,40 @@ EOF
     # Get the IP
     LOCAL_IP=$(get_local_ip)
 
+    # Try to open browser automatically
+    BROWSER_OPENED=false
+    if [ -n "$DISPLAY" ]; then
+        # GUI is available
+        if command -v chromium-browser &> /dev/null; then
+            chromium-browser "http://localhost:8080" 2>/dev/null &
+            BROWSER_OPENED=true
+        elif command -v firefox &> /dev/null; then
+            firefox "http://localhost:8080" 2>/dev/null &
+            BROWSER_OPENED=true
+        elif command -v xdg-open &> /dev/null; then
+            xdg-open "http://localhost:8080" 2>/dev/null &
+            BROWSER_OPENED=true
+        fi
+    elif command -v open &> /dev/null; then
+        # macOS
+        open "http://localhost:8080" 2>/dev/null &
+        BROWSER_OPENED=true
+    fi
+
     echo ""
     echo -e "${GREEN}══════════════════════════════════════════════════════════${NC}"
     echo -e "${GREEN}  Pi-hole Wizard is running!${NC}"
     echo -e "${GREEN}══════════════════════════════════════════════════════════${NC}"
     echo ""
+    if [ "$BROWSER_OPENED" = true ]; then
+        echo -e "  ${GREEN}Opening browser automatically...${NC}"
+        echo ""
+    fi
     echo -e "  Open this URL in your browser:"
     echo ""
     echo -e "  ${BLUE}http://${LOCAL_IP}:8080${NC}"
     echo ""
-    echo -e "  Or if you're on the same device:"
+    echo -e "  Or if you're on your Raspberry Pi:"
     echo -e "  ${BLUE}http://localhost:8080${NC}"
     echo ""
     echo -e "${GREEN}══════════════════════════════════════════════════════════${NC}"
@@ -316,13 +340,6 @@ EOF
     echo ""
     echo -e "  To stop the wizard later: ${GREEN}cd $INSTALL_DIR && docker compose down${NC}"
     echo ""
-
-    # Try to open browser (works on desktop Linux, ignored on headless)
-    if command -v xdg-open &> /dev/null; then
-        xdg-open "http://${LOCAL_IP}:8080" 2>/dev/null &
-    elif command -v open &> /dev/null; then
-        open "http://${LOCAL_IP}:8080" 2>/dev/null &
-    fi
 }
 
 # Run main function
