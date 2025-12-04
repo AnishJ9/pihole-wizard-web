@@ -5,6 +5,7 @@ API routes for prerequisite checking.
 from fastapi import APIRouter
 
 from backend.core.prerequisites import PrerequisiteChecker
+from backend.core.ssh_manager import ssh_manager
 from backend.models import PrerequisiteResponse
 
 router = APIRouter()
@@ -13,8 +14,12 @@ checker = PrerequisiteChecker()
 
 @router.get("", response_model=PrerequisiteResponse)
 async def check_prerequisites():
-    """Run all system prerequisite checks."""
-    return checker.check_all()
+    """Run all system prerequisite checks.
+
+    If SSH is connected, runs checks on the remote Pi.
+    Otherwise, runs checks locally.
+    """
+    return await checker.check_all_async(ssh_manager)
 
 
 @router.get("/network")

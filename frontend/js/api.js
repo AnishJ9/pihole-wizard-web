@@ -185,4 +185,30 @@ const API = {
     async fetchBlocklistSample(listId) {
         return this.get(`/api/blocklists/${listId}/sample`);
     },
+
+    // SSH Connection
+    async getSSHStatus() {
+        return this.get('/api/ssh/status');
+    },
+
+    async connectSSH(host, username, password, port = 22) {
+        return this.post('/api/ssh/connect', { host, username, password, port });
+    },
+
+    async disconnectSSH() {
+        return this.post('/api/ssh/disconnect', {});
+    },
+
+    async testSSHConnection() {
+        return this.get('/api/ssh/test');
+    },
+
+    async checkRemoteDocker() {
+        return this.get('/api/ssh/check-docker');
+    },
+
+    // Stats
+    async getStats() {
+        return this.get('/api/stats');
+    },
 };

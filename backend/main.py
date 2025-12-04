@@ -9,7 +9,7 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse
 from contextlib import asynccontextmanager
 
-from backend.api import wizard, prerequisites, config, install, chat, update, blocklists
+from backend.api import wizard, prerequisites, config, install, chat, update, blocklists, ssh, stats
 
 
 # Get the project root directory
@@ -41,6 +41,8 @@ app.include_router(install.router, prefix="/api/install", tags=["install"])
 app.include_router(chat.router, prefix="/api/chat", tags=["chat"])
 app.include_router(update.router, prefix="/api/update", tags=["update"])
 app.include_router(blocklists.router, prefix="/api/blocklists", tags=["blocklists"])
+app.include_router(ssh.router, prefix="/api/ssh", tags=["ssh"])
+app.include_router(stats.router, prefix="/api/stats", tags=["stats"])
 
 # Mount static files
 app.mount("/css", StaticFiles(directory=FRONTEND_DIR / "css"), name="css")

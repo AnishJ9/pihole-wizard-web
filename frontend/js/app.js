@@ -24,6 +24,15 @@ class WizardApp {
             blocklists: ['stevenblack'],
         };
 
+        // SSH connection state
+        this.sshStatus = {
+            is_local: false,
+            is_connected: false,
+            host: null,
+            username: null,
+            needs_ssh: true,
+        };
+
         // Blocklist definitions with metadata
         this.blocklistDefinitions = {
             'stevenblack': {
@@ -96,8 +105,47 @@ class WizardApp {
         await this.loadSavedState();
         this.renderBlocklists();
         this.updateUI();
-        await this.runPrerequisiteChecks();
-        await this.checkExistingInstallation();
+
+        // Load and display install stats
+        this.loadStats();
+
+        // Check SSH status first to determine if we need SSH connection
+        await this.checkSSHStatus();
+
+        // Only run prerequisite checks if we're local or already connected
+        if (this.sshStatus.is_local || this.sshStatus.is_connected) {
+            await this.runPrerequisiteChecks();
+            await this.checkExistingInstallation();
+        }
+    }
+
+    async loadStats() {
+        try {
+            const stats = await API.getStats();
+            const count = stats.installs_completed || 0;
+
+            // Only show if there's at least 1 install
+            if (count > 0) {
+                const counterEl = document.getElementById('installCounter');
+                const countEl = document.getElementById('installCount');
+
+                // Format number nicely
+                let formatted;
+                if (count >= 1000000) {
+                    formatted = (count / 1000000).toFixed(1) + 'M';
+                } else if (count >= 1000) {
+                    formatted = (count / 1000).toFixed(1) + 'k';
+                } else {
+                    formatted = count.toLocaleString();
+                }
+
+                countEl.textContent = formatted;
+                counterEl.style.display = 'flex';
+            }
+        } catch (e) {
+            // Stats are optional, don't show errors
+            console.log('Could not load stats:', e);
+        }
     }
 
     async checkExistingInstallation() {
@@ -318,6 +366,23 @@ class WizardApp {
         document.getElementById('addCustomBlocklist').addEventListener('click', () => {
             this.showCustomBlocklistForm();
         });
+
+        // SSH connection events
+        document.getElementById('sshConnectBtn').addEventListener('click', () => {
+            this.connectSSH();
+        });
+        document.getElementById('sshDisconnectBtn').addEventListener('click', () => {
+            this.disconnectSSH();
+        });
+
+        // Allow Enter key to submit SSH form
+        ['sshHost', 'sshUsername', 'sshPassword', 'sshPort'].forEach(id => {
+            document.getElementById(id).addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') {
+                    this.connectSSH();
+                }
+            });
+        });
     }
 
     async loadSavedState() {
@@ -427,6 +492,203 @@ class WizardApp {
     updateDhcpUI() {
         const dhcpSettings = document.getElementById('dhcpSettings');
         dhcpSettings.style.display = this.state.dhcp_enabled ? 'block' : 'none';
+    }
+
+    // SSH Connection Methods
+    async checkSSHStatus() {
+        try {
+            const status = await API.getSSHStatus();
+            this.sshStatus = status;
+            this.updateSSHUI();
+
+            // If we need SSH, try to pre-fill from saved credentials or auto-detect
+            if (this.sshStatus.needs_ssh && !this.sshStatus.is_connected) {
+                await this.prefillSSHCredentials();
+            }
+        } catch (e) {
+            console.error('Failed to check SSH status:', e);
+            // Assume remote mode if we can't check
+            this.sshStatus.needs_ssh = true;
+            this.updateSSHUI();
+        }
+    }
+
+    async prefillSSHCredentials() {
+        // First, try to load saved credentials (host/username only, not password)
+        const savedHost = localStorage.getItem('ssh_host');
+        const savedUsername = localStorage.getItem('ssh_username');
+        const savedPort = localStorage.getItem('ssh_port');
+
+        if (savedHost) {
+            document.getElementById('sshHost').value = savedHost;
+        }
+        if (savedUsername) {
+            document.getElementById('sshUsername').value = savedUsername;
+        }
+        if (savedPort) {
+            document.getElementById('sshPort').value = savedPort;
+        }
+
+        // If no saved host, try to auto-detect Pis on the network
+        if (!savedHost) {
+            try {
+                const network = await API.detectNetwork();
+                if (network.detected_pis && network.detected_pis.length > 0) {
+                    // Use first detected Pi
+                    const pi = network.detected_pis[0];
+                    document.getElementById('sshHost').value = pi.ip;
+
+                    // Show detection info
+                    const sshError = document.getElementById('sshError');
+                    sshError.style.display = 'block';
+                    sshError.style.color = 'var(--success)';
+                    sshError.textContent = `Found Pi at ${pi.ip}${pi.hostname ? ` (${pi.hostname})` : ''} via ${pi.method}`;
+                } else if (network.target_hostname) {
+                    // Try raspberrypi.local or similar
+                    document.getElementById('sshHost').value = network.target_hostname;
+                }
+            } catch (e) {
+                console.log('Could not auto-detect Pi:', e);
+            }
+        }
+
+        // Default username if not set
+        if (!document.getElementById('sshUsername').value) {
+            document.getElementById('sshUsername').value = 'pi';
+        }
+    }
+
+    updateSSHUI() {
+        const sshSection = document.getElementById('sshConnectionSection');
+        const localIndicator = document.getElementById('localModeIndicator');
+        const sshForm = document.getElementById('sshForm');
+        const sshConnected = document.getElementById('sshConnected');
+        const prereqChecks = document.getElementById('prereqChecks');
+
+        if (this.sshStatus.is_local) {
+            // Running locally on Pi - show local indicator, hide SSH section
+            sshSection.style.display = 'none';
+            localIndicator.style.display = 'block';
+            prereqChecks.style.display = 'grid';
+        } else if (this.sshStatus.is_connected) {
+            // Connected via SSH - show connected state
+            sshSection.style.display = 'block';
+            localIndicator.style.display = 'none';
+            sshForm.style.display = 'none';
+            sshConnected.style.display = 'flex';
+            prereqChecks.style.display = 'grid';
+            document.getElementById('sshConnectedHost').textContent =
+                `${this.sshStatus.username}@${this.sshStatus.host}`;
+        } else {
+            // Need SSH connection - show form and prompt, but show prereqs as pending
+            sshSection.style.display = 'block';
+            localIndicator.style.display = 'none';
+            sshForm.style.display = 'block';
+            sshConnected.style.display = 'none';
+            prereqChecks.style.display = 'grid';
+            prereqChecks.innerHTML = `
+                <div class="prereq-card warning">
+                    <div class="prereq-icon">
+                        <svg viewBox="0 0 24 24" fill="currentColor" width="24" height="24">
+                            <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/>
+                        </svg>
+                    </div>
+                    <div class="prereq-info">
+                        <h3>Connect to Your Pi</h3>
+                        <p>Enter your Raspberry Pi's SSH credentials above to check if it's ready for Pi-hole</p>
+                    </div>
+                </div>
+            `;
+            document.getElementById('recheckBtn').style.display = 'none';
+        }
+    }
+
+    async connectSSH() {
+        const host = document.getElementById('sshHost').value.trim();
+        const username = document.getElementById('sshUsername').value.trim();
+        const password = document.getElementById('sshPassword').value;
+        const port = parseInt(document.getElementById('sshPort').value) || 22;
+        const errorEl = document.getElementById('sshError');
+        const connectBtn = document.getElementById('sshConnectBtn');
+
+        // Validate inputs
+        if (!host) {
+            errorEl.textContent = 'Please enter the Pi IP address or hostname';
+            errorEl.style.display = 'block';
+            return;
+        }
+        if (!username) {
+            errorEl.textContent = 'Please enter the SSH username';
+            errorEl.style.display = 'block';
+            return;
+        }
+        if (!password) {
+            errorEl.textContent = 'Please enter the SSH password';
+            errorEl.style.display = 'block';
+            return;
+        }
+
+        errorEl.style.display = 'none';
+        connectBtn.disabled = true;
+        connectBtn.innerHTML = '<div class="spinner" style="width: 20px; height: 20px;"></div> Connecting...';
+
+        try {
+            const result = await API.connectSSH(host, username, password, port);
+
+            if (result.success) {
+                // Update SSH status
+                this.sshStatus.is_connected = true;
+                this.sshStatus.host = host;
+                this.sshStatus.username = username;
+                this.sshStatus.needs_ssh = false;
+
+                // Save credentials for next time (not password!)
+                localStorage.setItem('ssh_host', host);
+                localStorage.setItem('ssh_username', username);
+                localStorage.setItem('ssh_port', port.toString());
+
+                // Update Pi-hole IP to the connected host (useful for later)
+                if (!this.state.pihole_ip) {
+                    this.state.pihole_ip = host;
+                    document.getElementById('piholeIp').value = host;
+                }
+
+                this.updateSSHUI();
+
+                // Now run prerequisite checks on the remote Pi
+                await this.runPrerequisiteChecks();
+                await this.checkExistingInstallation();
+            } else {
+                errorEl.textContent = result.message || 'Connection failed';
+                errorEl.style.display = 'block';
+                errorEl.style.color = ''; // Reset color in case it was green
+            }
+        } catch (e) {
+            errorEl.textContent = e.message || 'Connection failed';
+            errorEl.style.display = 'block';
+            errorEl.style.color = ''; // Reset color
+        } finally {
+            connectBtn.disabled = false;
+            connectBtn.innerHTML = `
+                <svg viewBox="0 0 24 24" fill="currentColor" width="20" height="20">
+                    <path d="M21 3H3c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h18c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H3V5h18v14zM9 7h2v2H9V7zm0 4h2v2H9v-2zm-4 0h2v2H5v-2zm0-4h2v2H5V7zm0 8h10v2H5v-2zm4-4h2v2H9v-2zm4 0h2v2h-2v-2zm4 0h2v2h-2v-2zm0-4h2v2h-2V7zm-4 0h2v2h-2V7z"/>
+                </svg>
+                Connect via SSH
+            `;
+        }
+    }
+
+    async disconnectSSH() {
+        try {
+            await API.disconnectSSH();
+            this.sshStatus.is_connected = false;
+            this.sshStatus.host = null;
+            this.sshStatus.username = null;
+            this.sshStatus.needs_ssh = true;
+            this.updateSSHUI();
+        } catch (e) {
+            console.error('Failed to disconnect:', e);
+        }
     }
 
     async runPrerequisiteChecks() {

@@ -33,6 +33,12 @@
                     </svg>
                     <h1>Pi-hole Wizard</h1>
                 </div>
+                <div id="installCounter" class="install-counter" style="display: none;">
+                    <svg viewBox="0 0 24 24" fill="currentColor" width="14" height="14">
+                        <path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/>
+                    </svg>
+                    <span id="installCount">0</span> installs
+                </div>
             </div>
             <div class="header-right">
                 <button id="themeToggle" class="btn btn-icon" title="Toggle dark/light mode">
@@ -146,6 +152,69 @@
             <section class="step-content active" data-step="1">
                 <h2>System Prerequisites</h2>
                 <p class="step-description">Let's check if your system is ready for Pi-hole.</p>
+
+                <!-- SSH Connection Section (shown when running remotely) -->
+                <div id="sshConnectionSection" class="ssh-section" style="display: none;">
+                    <div class="info-box" style="margin-bottom: 1.5rem;">
+                        <svg viewBox="0 0 24 24" fill="currentColor" width="20" height="20">
+                            <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/>
+                        </svg>
+                        <div>
+                            <strong>Remote Installation Detected</strong>
+                            <p style="margin-top: 0.25rem;">You're running the wizard on a different machine. Connect to your Raspberry Pi via SSH to install Pi-hole remotely.</p>
+                        </div>
+                    </div>
+
+                    <div id="sshForm" class="ssh-form">
+                        <div class="form-row">
+                            <div class="form-group" style="flex: 2;">
+                                <label for="sshHost">Pi IP Address / Hostname</label>
+                                <input type="text" id="sshHost" placeholder="192.168.1.100 or raspberrypi.local">
+                            </div>
+                            <div class="form-group" style="flex: 0.5;">
+                                <label for="sshPort">Port</label>
+                                <input type="number" id="sshPort" value="22" min="1" max="65535">
+                            </div>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="sshUsername">Username</label>
+                                <input type="text" id="sshUsername" placeholder="pi">
+                            </div>
+                            <div class="form-group">
+                                <label for="sshPassword">Password</label>
+                                <input type="password" id="sshPassword" placeholder="Password">
+                            </div>
+                        </div>
+                        <div id="sshError" class="error-text" style="display: none;"></div>
+                        <button id="sshConnectBtn" class="btn btn-primary">
+                            <svg viewBox="0 0 24 24" fill="currentColor" width="20" height="20">
+                                <path d="M21 3H3c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h18c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H3V5h18v14zM9 7h2v2H9V7zm0 4h2v2H9v-2zm-4 0h2v2H5v-2zm0-4h2v2H5V7zm0 8h10v2H5v-2zm4-4h2v2H9v-2zm4 0h2v2h-2v-2zm4 0h2v2h-2v-2zm0-4h2v2h-2V7zm-4 0h2v2h-2V7z"/>
+                            </svg>
+                            Connect via SSH
+                        </button>
+                    </div>
+
+                    <div id="sshConnected" class="ssh-connected" style="display: none;">
+                        <div class="success-indicator">
+                            <svg viewBox="0 0 24 24" fill="currentColor" width="24" height="24">
+                                <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/>
+                            </svg>
+                            <span>Connected to <strong id="sshConnectedHost"></strong></span>
+                        </div>
+                        <button id="sshDisconnectBtn" class="btn btn-secondary btn-sm">Disconnect</button>
+                    </div>
+                </div>
+
+                <!-- Local Mode Indicator (shown when running on Pi) -->
+                <div id="localModeIndicator" class="local-mode-indicator" style="display: none;">
+                    <div class="success-indicator">
+                        <svg viewBox="0 0 24 24" fill="currentColor" width="24" height="24">
+                            <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/>
+                        </svg>
+                        <span><strong>Running locally on Raspberry Pi</strong> - No SSH needed!</span>
+                    </div>
+                </div>
 
                 <div id="prereqChecks" class="prereq-grid">
                     <div class="prereq-card checking">
@@ -613,6 +682,12 @@
             </div>
         </div>
         <div id="modalOverlay" class="modal-overlay" style="display: none;"></div>
+
+        <!-- Disclaimer Footer -->
+        <div class="disclaimer-footer">
+            <p>This is an unofficial community tool, not affiliated with Pi-hole LLC, NLnet Labs, or Anthropic.</p>
+            <p>Pi-hole® is a trademark of Pi-hole LLC. Use at your own risk.</p>
+        </div>
     </div>
 
     <script src="/js/api.js"></script>

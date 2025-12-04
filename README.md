@@ -182,3 +182,21 @@ Built with:
 - [Pi-hole](https://pi-hole.net/) - Network ad blocker
 - [Unbound](https://nlnetlabs.nl/projects/unbound/) - DNS resolver
 - [Claude](https://anthropic.com/) - AI troubleshooting
+
+---
+
+## Disclaimer
+
+**This is an unofficial community tool.** This project is not affiliated with, endorsed by, or sponsored by Pi-hole LLC, NLnet Labs, or Anthropic.
+
+- **Pi-hole®** is a registered trademark of Pi-hole LLC.
+- **Unbound** is developed by NLnet Labs.
+- **Claude** is a product of Anthropic.
+- **Docker** is a trademark of Docker, Inc.
+- **Raspberry Pi** is a trademark of Raspberry Pi Ltd.
+
+This software is provided "as is", without warranty of any kind. Use at your own risk. The authors are not responsible for any damage, data loss, or other issues that may arise from using this tool.
+
+This tool automates the installation of third-party open source software. Please review the licenses of the software being installed:
+- Pi-hole: [EUPL License](https://github.com/pi-hole/pi-hole/blob/master/LICENSE)
+- Unbound: [BSD License](https://github.com/NLnetLabs/unbound/blob/master/LICENSE)

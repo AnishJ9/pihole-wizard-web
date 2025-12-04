@@ -8,13 +8,251 @@ import socket
 import subprocess
 import platform
 import re
-from typing import Optional, Tuple, List, Dict
+from typing import Optional, Tuple, List, Dict, TYPE_CHECKING
 
 from backend.models import PrerequisiteCheck, PrerequisiteResponse, CheckStatus
+
+if TYPE_CHECKING:
+    from backend.core.ssh_manager import SSHManager
 
 
 class PrerequisiteChecker:
     """Check system prerequisites for Pi-hole installation."""
+
+    async def check_all_async(self, ssh_manager: "SSHManager") -> PrerequisiteResponse:
+        """Run all prerequisite checks, using SSH if connected."""
+        # If SSH is connected or we're running locally on Pi, use the ssh_manager
+        if ssh_manager.is_connected() or ssh_manager.is_running_on_pi():
+            return await self._check_all_via_ssh(ssh_manager)
+        else:
+            # Local checks (no SSH)
+            return self.check_all()
+
+    async def _check_all_via_ssh(self, ssh_manager: "SSHManager") -> PrerequisiteResponse:
+        """Run prerequisite checks via SSH on the remote Pi."""
+        checks = []
+
+        # Check Docker
+        docker_check = await self._check_docker_ssh(ssh_manager)
+        checks.append(docker_check)
+
+        # Check Docker Compose
+        compose_check = await self._check_docker_compose_ssh(ssh_manager)
+        checks.append(compose_check)
+
+        # Check ports (via SSH)
+        port53_check = await self._check_port_ssh(ssh_manager, 53, "DNS")
+        checks.append(port53_check)
+
+        port80_check = await self._check_port_ssh(ssh_manager, 80, "Web Interface")
+        checks.append(port80_check)
+
+        # Detect network info via SSH
+        detected_ip, detected_interface = await self._detect_network_ssh(ssh_manager)
+        detected_gateway = await self._detect_gateway_ssh(ssh_manager)
+
+        # For SSH connection, assume the connected IP is the Pi's IP
+        if not detected_ip and ssh_manager.host:
+            detected_ip = ssh_manager.host
+
+        # Check static IP (simplified for remote)
+        is_static, static_message = await self._check_static_ip_ssh(ssh_manager, detected_interface)
+
+        can_proceed = all(c.status != CheckStatus.FAIL for c in checks)
+
+        return PrerequisiteResponse(
+            checks=checks,
+            can_proceed=can_proceed,
+            detected_ip=detected_ip,
+            detected_interface=detected_interface,
+            detected_gateway=detected_gateway,
+            is_static_ip=is_static,
+            static_ip_message=static_message,
+        )
+
+    async def _check_docker_ssh(self, ssh_manager: "SSHManager") -> PrerequisiteCheck:
+        """Check Docker via SSH."""
+        try:
+            returncode, stdout, stderr = await ssh_manager.run_command("which docker")
+            if returncode != 0:
+                return PrerequisiteCheck(
+                    name="Docker",
+                    status=CheckStatus.FAIL,
+                    message="Docker not installed",
+                    details="Docker is required for the recommended installation method.",
+                    fix_suggestion="Install Docker: curl -fsSL https://get.docker.com | sh",
+                )
+
+            # Check if daemon is running
+            returncode, stdout, stderr = await ssh_manager.run_command("docker info 2>&1")
+            if returncode != 0:
+                if "permission denied" in (stdout + stderr).lower():
+                    return PrerequisiteCheck(
+                        name="Docker",
+                        status=CheckStatus.FAIL,
+                        message="Docker permission denied",
+                        details="User needs to be added to the docker group.",
+                        fix_suggestion="Run: sudo usermod -aG docker $USER && newgrp docker",
+                    )
+                return PrerequisiteCheck(
+                    name="Docker",
+                    status=CheckStatus.FAIL,
+                    message="Docker not running",
+                    details="Docker is installed but the daemon is not running.",
+                    fix_suggestion="Run: sudo systemctl start docker",
+                )
+
+            # Get version
+            returncode, stdout, stderr = await ssh_manager.run_command("docker --version")
+            version = stdout.strip() if returncode == 0 else "version unknown"
+
+            return PrerequisiteCheck(
+                name="Docker",
+                status=CheckStatus.PASS,
+                message="Docker is ready",
+                details=version,
+            )
+        except Exception as e:
+            return PrerequisiteCheck(
+                name="Docker",
+                status=CheckStatus.WARNING,
+                message="Could not check Docker",
+                details=str(e),
+            )
+
+    async def _check_docker_compose_ssh(self, ssh_manager: "SSHManager") -> PrerequisiteCheck:
+        """Check Docker Compose via SSH."""
+        try:
+            # Try docker compose (v2)
+            returncode, stdout, stderr = await ssh_manager.run_command("docker compose version 2>&1")
+            if returncode == 0:
+                return PrerequisiteCheck(
+                    name="Docker Compose",
+                    status=CheckStatus.PASS,
+                    message="Docker Compose is ready",
+                    details=stdout.strip(),
+                )
+
+            # Try docker-compose (v1)
+            returncode, stdout, stderr = await ssh_manager.run_command("docker-compose --version 2>&1")
+            if returncode == 0:
+                return PrerequisiteCheck(
+                    name="Docker Compose",
+                    status=CheckStatus.PASS,
+                    message="Docker Compose is ready",
+                    details=stdout.strip(),
+                )
+
+            return PrerequisiteCheck(
+                name="Docker Compose",
+                status=CheckStatus.FAIL,
+                message="Docker Compose not found",
+                details="Docker Compose is required to run the containers.",
+                fix_suggestion="Install: sudo apt-get install docker-compose-plugin",
+            )
+        except Exception as e:
+            return PrerequisiteCheck(
+                name="Docker Compose",
+                status=CheckStatus.WARNING,
+                message="Could not check Docker Compose",
+                details=str(e),
+            )
+
+    async def _check_port_ssh(self, ssh_manager: "SSHManager", port: int, service_name: str) -> PrerequisiteCheck:
+        """Check if a port is available via SSH."""
+        try:
+            # Check if port is in use
+            returncode, stdout, stderr = await ssh_manager.run_command(
+                f"ss -tuln | grep ':{port} ' || echo 'AVAILABLE'"
+            )
+
+            if "AVAILABLE" in stdout:
+                return PrerequisiteCheck(
+                    name=f"Port {port} ({service_name})",
+                    status=CheckStatus.PASS,
+                    message=f"Port {port} is available",
+                )
+            else:
+                # Try to identify what's using the port
+                returncode2, stdout2, stderr2 = await ssh_manager.run_command(
+                    f"sudo lsof -i :{port} 2>/dev/null | head -2 || echo 'unknown'"
+                )
+                process = "unknown service"
+                if stdout2 and "unknown" not in stdout2:
+                    lines = stdout2.strip().split("\n")
+                    if len(lines) > 1:
+                        process = lines[1].split()[0]
+
+                return PrerequisiteCheck(
+                    name=f"Port {port} ({service_name})",
+                    status=CheckStatus.FAIL,
+                    message=f"Port {port} is in use",
+                    details=f"Another process is using this port: {process}",
+                    fix_suggestion=f"Stop the service using port {port} before installing Pi-hole.",
+                )
+        except Exception as e:
+            return PrerequisiteCheck(
+                name=f"Port {port} ({service_name})",
+                status=CheckStatus.WARNING,
+                message=f"Could not check port {port}",
+                details=str(e),
+            )
+
+    async def _detect_network_ssh(self, ssh_manager: "SSHManager") -> Tuple[Optional[str], Optional[str]]:
+        """Detect network configuration via SSH."""
+        try:
+            # Get default route interface and IP
+            returncode, stdout, stderr = await ssh_manager.run_command(
+                "ip route show default | awk '/default/ {print $5}'"
+            )
+            interface = stdout.strip() if returncode == 0 and stdout.strip() else None
+
+            if interface:
+                returncode, stdout, stderr = await ssh_manager.run_command(
+                    f"ip -4 addr show {interface} | grep -oP 'inet \\K[0-9.]+'"
+                )
+                ip = stdout.strip() if returncode == 0 and stdout.strip() else None
+                return ip, interface
+
+            # Fallback: get any non-loopback IP
+            returncode, stdout, stderr = await ssh_manager.run_command(
+                "hostname -I | awk '{print $1}'"
+            )
+            ip = stdout.strip() if returncode == 0 and stdout.strip() else None
+            return ip, None
+        except Exception:
+            return None, None
+
+    async def _detect_gateway_ssh(self, ssh_manager: "SSHManager") -> Optional[str]:
+        """Detect default gateway via SSH."""
+        try:
+            returncode, stdout, stderr = await ssh_manager.run_command(
+                "ip route show default | awk '/default/ {print $3}'"
+            )
+            return stdout.strip() if returncode == 0 and stdout.strip() else None
+        except Exception:
+            return None
+
+    async def _check_static_ip_ssh(self, ssh_manager: "SSHManager", interface: Optional[str]) -> Tuple[bool, str]:
+        """Check if IP is static via SSH."""
+        try:
+            # Check dhcpcd.conf
+            returncode, stdout, stderr = await ssh_manager.run_command(
+                "grep -q 'static ip_address' /etc/dhcpcd.conf 2>/dev/null && echo 'STATIC'"
+            )
+            if "STATIC" in stdout:
+                return True, "Static IP configured in /etc/dhcpcd.conf"
+
+            # Check for DHCP client running
+            returncode, stdout, stderr = await ssh_manager.run_command(
+                "pgrep -x 'dhclient|dhcpcd' >/dev/null && echo 'DHCP'"
+            )
+            if "DHCP" in stdout:
+                return False, "DHCP client is running - IP may change"
+
+            return False, "Could not confirm static IP configuration"
+        except Exception:
+            return False, "Could not check static IP configuration"
 
     def check_all(self) -> PrerequisiteResponse:
         """Run all prerequisite checks and return combined result."""

@@ -19,3 +19,35 @@ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
+
+---
+
+THIRD-PARTY SOFTWARE NOTICES
+
+This software facilitates the installation of third-party software that is
+licensed under separate terms:
+
+1. Pi-hole - Licensed under the EUPL (European Union Public License)
+   https://github.com/pi-hole/pi-hole/blob/master/LICENSE
+
+2. Unbound - Licensed under the BSD License
+   https://github.com/NLnetLabs/unbound/blob/master/LICENSE
+
+3. Docker images used:
+   - pihole/pihole - Licensed under EUPL
+   - mvance/unbound - Licensed under MIT
+
+Users of this software are responsible for complying with the licenses of
+any third-party software installed through this tool.
+
+---
+
+TRADEMARK NOTICES
+
+- Pi-hole® is a registered trademark of Pi-hole LLC.
+- Docker® is a trademark of Docker, Inc.
+- Raspberry Pi® is a trademark of Raspberry Pi Ltd.
+- Claude is a product of Anthropic.
+
+This project is not affiliated with, endorsed by, or sponsored by any of
+the above trademark holders.
