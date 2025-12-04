@@ -53,7 +53,7 @@ if ! is_raspberry_pi; then
     echo -e "  ${CYAN}[3]${NC} Exit"
     echo ""
     echo -n "  Enter choice [1/2/3]: "
-    read -r choice
+    read -r choice < /dev/tty
     echo ""
 
     case "$choice" in
