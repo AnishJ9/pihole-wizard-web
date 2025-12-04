@@ -52,6 +52,11 @@ if ! is_raspberry_pi; then
     echo -e "  ${CYAN}[2]${NC} Continue anyway (I know what I'm doing)"
     echo -e "  ${CYAN}[3]${NC} Exit"
     echo ""
+    echo -e "  ${YELLOW}Learn more about Pi-hole:${NC}"
+    echo -e "  • Docs:   ${BLUE}https://docs.pi-hole.net${NC}"
+    echo -e "  • GitHub: ${BLUE}https://github.com/pi-hole/pi-hole${NC}"
+    echo -e "  • Forum:  ${BLUE}https://discourse.pi-hole.net${NC}"
+    echo ""
     echo -n "  Enter choice [1/2/3]: "
     read -r choice < /dev/tty
     echo ""
