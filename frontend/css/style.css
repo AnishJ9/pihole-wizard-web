@@ -601,6 +601,21 @@ body {
     font-size: 0.9375rem;
 }
 
+.option-details {
+    margin-top: 0.75rem;
+    padding-left: 1.25rem;
+    font-size: 0.875rem;
+    color: var(--text-muted);
+}
+
+.option-details li {
+    margin-bottom: 0.35rem;
+}
+
+.option-details strong {
+    color: var(--text);
+}
+
 .badge {
     font-size: 0.75rem;
     padding: 0.125rem 0.5rem;
