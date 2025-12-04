@@ -21,6 +21,60 @@ echo -e "${BLUE}║       Pi-hole Wizard Installer            ║${NC}"
 echo -e "${BLUE}╚═══════════════════════════════════════════╝${NC}"
 echo ""
 
+# Detect if running on a Raspberry Pi or compatible device
+detect_device() {
+    # Check for Raspberry Pi
+    if [ -f /proc/device-tree/model ]; then
+        MODEL=$(cat /proc/device-tree/model 2>/dev/null)
+        if echo "$MODEL" | grep -qi "raspberry"; then
+            echo -e "${GREEN}✓${NC} Detected: $MODEL"
+            return 0
+        fi
+    fi
+
+    # Check for Debian/Ubuntu on ARM (likely a Pi or similar SBC)
+    if [ -f /etc/os-release ]; then
+        . /etc/os-release
+        ARCH=$(uname -m)
+        if [[ "$ARCH" == "aarch64" || "$ARCH" == "armv7l" || "$ARCH" == "armhf" ]]; then
+            echo -e "${GREEN}✓${NC} Detected: $PRETTY_NAME on $ARCH (ARM device)"
+            return 0
+        fi
+    fi
+
+    # Not a Pi or ARM device - warn the user
+    return 1
+}
+
+# Check if this is the right device
+if ! detect_device; then
+    OS_NAME=$(uname -s)
+    echo -e "${YELLOW}╔═══════════════════════════════════════════════════════════════╗${NC}"
+    echo -e "${YELLOW}║  ⚠️  Wait! This doesn't look like a Raspberry Pi              ║${NC}"
+    echo -e "${YELLOW}╠═══════════════════════════════════════════════════════════════╣${NC}"
+    echo -e "${YELLOW}║                                                               ║${NC}"
+    echo -e "${YELLOW}║  You're running this on: ${NC}$(printf '%-35s' "$OS_NAME ($(uname -m))")${YELLOW}║${NC}"
+    echo -e "${YELLOW}║                                                               ║${NC}"
+    echo -e "${YELLOW}║  Pi-hole Wizard is designed to run on your Raspberry Pi,     ║${NC}"
+    echo -e "${YELLOW}║  not your personal computer.                                  ║${NC}"
+    echo -e "${YELLOW}║                                                               ║${NC}"
+    echo -e "${YELLOW}║  To install Pi-hole:                                          ║${NC}"
+    echo -e "${YELLOW}║  1. SSH into your Raspberry Pi                                ║${NC}"
+    echo -e "${YELLOW}║  2. Run this command there instead                            ║${NC}"
+    echo -e "${YELLOW}║                                                               ║${NC}"
+    echo -e "${YELLOW}║  Need help? Visit: ${NC}${BLUE}https://pihole-wizard.com/#ssh-help${NC}${YELLOW}        ║${NC}"
+    echo -e "${YELLOW}║                                                               ║${NC}"
+    echo -e "${YELLOW}╚═══════════════════════════════════════════════════════════════╝${NC}"
+    echo ""
+    read -p "Continue anyway? (y/N) " -n 1 -r
+    echo ""
+    if [[ ! $REPLY =~ ^[Yy]$ ]]; then
+        echo -e "${BLUE}No problem! Run this on your Raspberry Pi when you're ready.${NC}"
+        exit 0
+    fi
+    echo ""
+fi
+
 # Check if running as root
 if [ "$EUID" -eq 0 ]; then
     SUDO=""
