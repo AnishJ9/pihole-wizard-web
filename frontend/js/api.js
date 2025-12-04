@@ -81,6 +81,18 @@ const API = {
         return this.delete('/api/wizard/state');
     },
 
+    async exportConfig() {
+        const response = await fetch('/api/wizard/export');
+        if (!response.ok) {
+            throw new Error('Export failed');
+        }
+        return response.json();
+    },
+
+    async importConfig(configData) {
+        return this.post('/api/wizard/import', configData);
+    },
+
     // Config
     async previewConfig(state) {
         return this.post('/api/config/preview', state);
@@ -137,6 +149,19 @@ const API = {
         };
 
         return ws;
+    },
+
+    // Update
+    async checkForUpdates() {
+        return this.get('/api/update/check');
+    },
+
+    async startUpdate() {
+        return this.post('/api/update/start', {});
+    },
+
+    async getUpdateStatus() {
+        return this.get('/api/update/status');
     },
 
     // Chat

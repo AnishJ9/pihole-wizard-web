@@ -39,6 +39,20 @@ class WizardApp {
         document.getElementById('nextBtn').addEventListener('click', () => this.nextStep());
         document.getElementById('backBtn').addEventListener('click', () => this.prevStep());
 
+        // Export/Import
+        document.getElementById('exportBtn').addEventListener('click', () => this.exportConfig());
+        document.getElementById('importBtn').addEventListener('click', () => {
+            document.getElementById('importFileInput').click();
+        });
+        document.getElementById('importFileInput').addEventListener('change', (e) => this.importConfig(e));
+
+        // Update modal
+        document.getElementById('updateBtn').addEventListener('click', () => this.openUpdateModal());
+        document.getElementById('closeUpdateModal').addEventListener('click', () => this.closeUpdateModal());
+        document.getElementById('modalOverlay').addEventListener('click', () => this.closeUpdateModal());
+        document.getElementById('checkUpdateBtn').addEventListener('click', () => this.checkForUpdates());
+        document.getElementById('startUpdateBtn').addEventListener('click', () => this.startUpdate());
+
         // Step indicators
         document.querySelectorAll('.step').forEach(step => {
             step.addEventListener('click', () => {
@@ -561,6 +575,204 @@ class WizardApp {
         const dashboardLink = document.getElementById('dashboardLink');
         dashboardLink.href = `http://${this.state.pihole_ip}/admin`;
         dashboardLink.textContent = `http://${this.state.pihole_ip}/admin`;
+    }
+
+    // Export/Import functionality
+    async exportConfig() {
+        try {
+            // Collect current form data first
+            this.collectFormData();
+            await this.saveState();
+
+            const exportData = await API.exportConfig();
+
+            // Download as JSON file
+            const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'pihole-wizard-config.json';
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+
+            alert('Configuration exported successfully!');
+        } catch (e) {
+            alert('Export failed: ' + e.message);
+        }
+    }
+
+    async importConfig(event) {
+        const file = event.target.files[0];
+        if (!file) return;
+
+        try {
+            const text = await file.text();
+            const configData = JSON.parse(text);
+
+            const result = await API.importConfig(configData);
+
+            // Update local state
+            this.state = { ...this.state, ...result.state };
+
+            // Update form fields
+            this.populateFormFromState();
+
+            // Reset file input
+            event.target.value = '';
+
+            alert('Configuration imported successfully!' +
+                  (configData._note ? '\n\nNote: ' + configData._note : ''));
+
+            // Go to step 1 to review
+            this.currentStep = 1;
+            this.updateUI();
+        } catch (e) {
+            alert('Import failed: ' + e.message);
+            event.target.value = '';
+        }
+    }
+
+    populateFormFromState() {
+        // Deployment
+        const deploymentInput = document.querySelector(`input[name="deployment"][value="${this.state.deployment}"]`);
+        if (deploymentInput) {
+            deploymentInput.checked = true;
+            this.updateOptionCards();
+        }
+
+        // Network
+        if (this.state.pihole_ip) {
+            document.getElementById('piholeIp').value = this.state.pihole_ip;
+        }
+        if (this.state.network_interface) {
+            document.getElementById('networkInterface').value = this.state.network_interface;
+        }
+
+        // DNS
+        document.getElementById('enableUnbound').checked = this.state.enable_unbound;
+        document.getElementById('ipv6').checked = this.state.ipv6;
+        if (this.state.upstream_dns) {
+            document.getElementById('upstreamDnsSelect').value = this.state.upstream_dns;
+        }
+        if (this.state.custom_dns) {
+            document.getElementById('customDnsInput').value = this.state.custom_dns;
+        }
+
+        // DHCP
+        document.getElementById('dhcpEnabled').checked = this.state.dhcp_enabled;
+        if (this.state.dhcp_start) {
+            document.getElementById('dhcpStart').value = this.state.dhcp_start;
+        }
+        if (this.state.dhcp_end) {
+            document.getElementById('dhcpEnd').value = this.state.dhcp_end;
+        }
+        if (this.state.dhcp_router) {
+            document.getElementById('dhcpRouter').value = this.state.dhcp_router;
+        }
+
+        // Update UI states
+        this.updateDeploymentUI();
+        this.updateDnsUI();
+        this.updateDhcpUI();
+    }
+
+    // Update functionality
+    openUpdateModal() {
+        document.getElementById('updateModal').style.display = 'block';
+        document.getElementById('modalOverlay').style.display = 'block';
+        // Reset modal state
+        document.getElementById('updateCheck').style.display = 'block';
+        document.getElementById('updateStatus').style.display = 'none';
+        document.getElementById('updateProgressContainer').style.display = 'none';
+    }
+
+    closeUpdateModal() {
+        document.getElementById('updateModal').style.display = 'none';
+        document.getElementById('modalOverlay').style.display = 'none';
+    }
+
+    async checkForUpdates() {
+        const checkBtn = document.getElementById('checkUpdateBtn');
+        checkBtn.disabled = true;
+        checkBtn.textContent = 'Checking...';
+
+        try {
+            const result = await API.checkForUpdates();
+
+            document.getElementById('updateCheck').style.display = 'none';
+            document.getElementById('updateStatus').style.display = 'block';
+
+            const infoEl = document.getElementById('updateInfo');
+
+            if (result.has_existing_install) {
+                infoEl.innerHTML = `
+                    <p><strong class="status-pass">Pi-hole installation found!</strong></p>
+                    ${result.install_path ? `<p>Location: <code>${result.install_path}</code></p>` : ''}
+                    ${result.current_version ? `<p>Current version: ${result.current_version}</p>` : ''}
+                    ${result.running_containers?.length ? `<p>Running containers: ${result.running_containers.join(', ')}</p>` : ''}
+                    <p>${result.message}</p>
+                `;
+                document.getElementById('startUpdateBtn').style.display = 'inline-flex';
+            } else {
+                infoEl.innerHTML = `
+                    <p><strong class="status-fail">No installation found</strong></p>
+                    <p>${result.message}</p>
+                `;
+                document.getElementById('startUpdateBtn').style.display = 'none';
+            }
+        } catch (e) {
+            alert('Check failed: ' + e.message);
+        } finally {
+            checkBtn.disabled = false;
+            checkBtn.textContent = 'Check for Updates';
+        }
+    }
+
+    async startUpdate() {
+        const startBtn = document.getElementById('startUpdateBtn');
+        startBtn.disabled = true;
+        startBtn.textContent = 'Updating...';
+
+        document.getElementById('updateProgressContainer').style.display = 'block';
+
+        try {
+            await API.startUpdate();
+
+            // Poll for status
+            const statusInterval = setInterval(async () => {
+                try {
+                    const status = await API.getUpdateStatus();
+
+                    document.getElementById('updateProgressBar').style.width = `${status.progress}%`;
+                    document.getElementById('updateStep').textContent = status.current_step;
+
+                    if (status.status === 'success') {
+                        clearInterval(statusInterval);
+                        document.getElementById('updateInfo').innerHTML = `
+                            <p><strong class="status-pass">Update complete!</strong></p>
+                            <p>${status.message}</p>
+                        `;
+                        startBtn.style.display = 'none';
+                    } else if (status.status === 'failed') {
+                        clearInterval(statusInterval);
+                        document.getElementById('updateInfo').innerHTML = `
+                            <p><strong class="status-fail">Update failed</strong></p>
+                            <p>${status.message}</p>
+                        `;
+                        startBtn.disabled = false;
+                        startBtn.textContent = 'Retry Update';
+                    }
+                } catch (e) {
+                    clearInterval(statusInterval);
+                }
+            }, 1000);
+        } catch (e) {
+            alert('Update failed to start: ' + e.message);
+            startBtn.disabled = false;
+            startBtn.textContent = 'Update Now';
+        }
     }
 }
 

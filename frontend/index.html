@@ -27,11 +27,23 @@
                 </div>
             </div>
             <div class="header-right">
-                <button id="helpBtn" class="btn btn-text">
+                <button id="importBtn" class="btn btn-text" title="Import saved configuration">
                     <svg viewBox="0 0 24 24" fill="currentColor" width="20" height="20">
-                        <path d="M11 18h2v-2h-2v2zm1-16C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm0-14c-2.21 0-4 1.79-4 4h2c0-1.1.9-2 2-2s2 .9 2 2c0 2-3 1.75-3 5h2c0-2.25 3-2.5 3-5 0-2.21-1.79-4-4-4z"/>
+                        <path d="M9 16h6v-6h4l-7-7-7 7h4v6zm-4 2h14v2H5v-2z"/>
                     </svg>
-                    Help
+                    Import
+                </button>
+                <button id="exportBtn" class="btn btn-text" title="Export current configuration">
+                    <svg viewBox="0 0 24 24" fill="currentColor" width="20" height="20">
+                        <path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/>
+                    </svg>
+                    Export
+                </button>
+                <button id="updateBtn" class="btn btn-text" title="Check for updates">
+                    <svg viewBox="0 0 24 24" fill="currentColor" width="20" height="20">
+                        <path d="M21 10.12h-6.78l2.74-2.82c-2.73-2.7-7.15-2.8-9.88-.1-2.73 2.71-2.73 7.08 0 9.79s7.15 2.71 9.88 0C18.32 15.65 19 14.08 19 12.1h2c0 1.98-.88 4.55-2.64 6.29-3.51 3.48-9.21 3.48-12.72 0-3.5-3.47-3.53-9.11-.02-12.58s9.14-3.47 12.65 0L21 3v7.12z"/>
+                    </svg>
+                    Update
                 </button>
                 <button id="chatBtn" class="btn btn-primary">
                     <svg viewBox="0 0 24 24" fill="currentColor" width="20" height="20">
@@ -39,6 +51,7 @@
                     </svg>
                     AI Chat
                 </button>
+                <input type="file" id="importFileInput" accept=".json" style="display: none;">
             </div>
         </header>
 
@@ -444,6 +457,39 @@
             </div>
         </div>
         <div id="chatOverlay" class="chat-overlay"></div>
+
+        <!-- Update Modal -->
+        <div id="updateModal" class="modal" style="display: none;">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h3>Update Pi-hole</h3>
+                    <button id="closeUpdateModal" class="btn-icon">
+                        <svg viewBox="0 0 24 24" fill="currentColor" width="24" height="24">
+                            <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/>
+                        </svg>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <div id="updateCheck" class="update-section">
+                        <p>Check for an existing Pi-hole installation and update to the latest version.</p>
+                        <button id="checkUpdateBtn" class="btn btn-primary">Check for Updates</button>
+                    </div>
+                    <div id="updateStatus" class="update-section" style="display: none;">
+                        <div id="updateInfo" class="update-info"></div>
+                        <div id="updateProgressContainer" style="display: none;">
+                            <div class="progress-bar-container">
+                                <div id="updateProgressBar" class="progress-bar" style="width: 0%"></div>
+                            </div>
+                            <p id="updateStep" class="update-step">Preparing...</p>
+                        </div>
+                        <div id="updateActions" class="update-actions">
+                            <button id="startUpdateBtn" class="btn btn-primary" style="display: none;">Update Now</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div id="modalOverlay" class="modal-overlay" style="display: none;"></div>
     </div>
 
     <script src="/js/api.js"></script>
