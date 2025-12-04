@@ -13,6 +13,7 @@ RED='\033[0;31m'
 GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
 BLUE='\033[0;34m'
+CYAN='\033[0;36m'
 NC='\033[0m' # No Color
 
 echo ""
@@ -20,6 +21,52 @@ echo -e "${BLUE}╔════════════════════�
 echo -e "${BLUE}║       Pi-hole Wizard Installer            ║${NC}"
 echo -e "${BLUE}╚═══════════════════════════════════════════╝${NC}"
 echo ""
+
+# Check if running on a Raspberry Pi
+is_raspberry_pi() {
+    # Check for Raspberry Pi model file
+    if [ -f /proc/device-tree/model ]; then
+        if grep -qi "raspberry pi" /proc/device-tree/model 2>/dev/null; then
+            return 0
+        fi
+    fi
+    # Check cpuinfo for Raspberry Pi
+    if [ -f /proc/cpuinfo ]; then
+        if grep -qi "raspberry pi\|BCM2" /proc/cpuinfo 2>/dev/null; then
+            return 0
+        fi
+    fi
+    return 1
+}
+
+# If not on a Pi, offer to scan for one
+if ! is_raspberry_pi; then
+    echo -e "${YELLOW}══════════════════════════════════════════════════════════${NC}"
+    echo -e "${YELLOW}  It looks like you're not on a Raspberry Pi.${NC}"
+    echo -e "${YELLOW}══════════════════════════════════════════════════════════${NC}"
+    echo ""
+    echo -e "  Pi-hole Wizard is designed to run on a Raspberry Pi."
+    echo -e "  Would you like to:"
+    echo ""
+    echo -e "  ${CYAN}[1]${NC} Find my Raspberry Pi on this network"
+    echo -e "  ${CYAN}[2]${NC} Install here anyway (for testing/other Linux)"
+    echo ""
+    echo -n "  Enter choice [1/2]: "
+    read -r choice
+    echo ""
+
+    if [ "$choice" = "1" ]; then
+        echo -e "${BLUE}Launching Pi scanner...${NC}"
+        echo ""
+        exec bash <(curl -sSL https://pihole-wizard.com/scan.sh)
+        exit 0
+    elif [ "$choice" != "2" ]; then
+        echo -e "${YELLOW}Invalid choice. Exiting.${NC}"
+        exit 1
+    fi
+    echo -e "${YELLOW}Continuing with installation on this device...${NC}"
+    echo ""
+fi
 
 # Check if running as root
 if [ "$EUID" -eq 0 ]; then
