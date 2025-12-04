@@ -344,27 +344,27 @@
 
         .pi-badge {
             position: absolute;
-            top: -10px;
+            top: -12px;
             background: var(--primary);
             color: white;
             font-size: 0.75rem;
-            padding: 0.2rem 0.5rem;
+            font-weight: 600;
+            padding: 0.25rem 0.75rem;
             border-radius: 4px;
+            text-shadow: none;
         }
 
-        .also-need {
-            font-size: 0.9rem;
-            color: var(--text-muted);
-            margin-bottom: 0.75rem;
+        .pi-badge.budget {
+            background: var(--success);
         }
 
-        .also-need a {
-            color: var(--primary);
-            text-decoration: none;
-        }
-
-        .also-need a:hover {
+        .sd-link {
+            color: var(--primary) !important;
             text-decoration: underline;
+        }
+
+        .sd-link:hover {
+            color: var(--primary-dark) !important;
         }
 
         .affiliate-note {
@@ -612,21 +612,20 @@
                 <p>Here's what we recommend:</p>
                 <div class="pi-options">
                     <a href="https://amzn.to/4pNnAz9" target="_blank" rel="noopener" class="pi-option recommended">
-                        <span class="pi-badge">Best for beginners</span>
+                        <span class="pi-badge">Recommended</span>
                         <strong>Starter Kit</strong>
-                        <span>Everything you need included</span>
+                        <span>Everything included - just plug in!</span>
                     </a>
                     <a href="https://amzn.to/3KDzsFa" target="_blank" rel="noopener" class="pi-option">
                         <strong>Pi 5 Board Only</strong>
-                        <span>If you have accessories already</span>
+                        <span>+ <a href="https://amzn.to/4petVDZ" target="_blank" rel="noopener" class="sd-link">32GB SD card</a></span>
                     </a>
                     <a href="https://amzn.to/44ArcMU" target="_blank" rel="noopener" class="pi-option">
-                        <span class="pi-badge" style="background: var(--success);">Budget pick</span>
+                        <span class="pi-badge budget">Budget</span>
                         <strong>Pi 4 Board</strong>
-                        <span>Great value option</span>
+                        <span>+ <a href="https://amzn.to/4petVDZ" target="_blank" rel="noopener" class="sd-link">32GB SD card</a></span>
                     </a>
                 </div>
-                <p class="also-need">Buying a board only? You'll also need a <a href="https://amzn.to/4petVDZ" target="_blank" rel="noopener">32GB SD card</a>.</p>
                 <p class="affiliate-note">As an Amazon Associate, we earn from qualifying purchases.</p>
             </div>
         </section>
