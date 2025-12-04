@@ -92,6 +92,12 @@ class WizardApp {
             this.runPrerequisiteChecks();
         });
 
+        // Dismiss support banner
+        document.getElementById('dismissBanner')?.addEventListener('click', () => {
+            document.getElementById('supportBanner').style.display = 'none';
+            localStorage.setItem('bannerDismissed', 'true');
+        });
+
         // Config tabs
         document.querySelectorAll('.tab').forEach(tab => {
             tab.addEventListener('click', () => {
@@ -221,6 +227,12 @@ class WizardApp {
         try {
             const result = await API.checkPrerequisites();
             this.renderPrerequisites(result);
+
+            // Show support banner if prerequisites passed and not previously dismissed
+            const hasFailed = result.checks?.some(c => c.status === 'fail');
+            if (!hasFailed && !localStorage.getItem('bannerDismissed')) {
+                document.getElementById('supportBanner').style.display = 'flex';
+            }
 
             // Auto-fill detected network info
             if (result.detected_ip && !this.state.pihole_ip) {

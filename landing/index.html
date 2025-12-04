@@ -270,6 +270,70 @@
             font-size: 0.9375rem;
         }
 
+        /* Support Section */
+        .support {
+            background: linear-gradient(135deg, rgba(59, 130, 246, 0.1), rgba(34, 197, 94, 0.1));
+            border: 1px solid rgba(59, 130, 246, 0.3);
+            border-radius: 1rem;
+            padding: 2.5rem;
+            text-align: center;
+            margin-bottom: 3rem;
+        }
+
+        .support h2 {
+            margin-bottom: 0.75rem;
+        }
+
+        .support > p {
+            color: var(--text-muted);
+            margin-bottom: 1.5rem;
+            max-width: 500px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        .donation-buttons {
+            display: flex;
+            justify-content: center;
+            gap: 1rem;
+            flex-wrap: wrap;
+        }
+
+        .btn-donation {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            background: #ffdd00;
+            color: #000;
+            font-weight: 600;
+            padding: 0.75rem 1.5rem;
+            border-radius: 0.5rem;
+            text-decoration: none;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        .btn-donation:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(255, 221, 0, 0.3);
+        }
+
+        .btn-github {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            background: var(--bg-light);
+            color: var(--text);
+            padding: 0.75rem 1.5rem;
+            border-radius: 0.5rem;
+            text-decoration: none;
+            border: 1px solid #334155;
+            transition: border-color 0.2s;
+        }
+
+        .btn-github:hover {
+            border-color: var(--primary);
+        }
+
         /* Footer */
         footer {
             text-align: center;
@@ -441,6 +505,26 @@
             </div>
         </section>
 
+        <!-- Support -->
+        <section class="support">
+            <h2>Support This Project</h2>
+            <p>Pi-hole Wizard is free and open source. If it saves you time and frustration, consider supporting development!</p>
+            <div class="donation-buttons">
+                <a href="https://buymeacoffee.com/anishj" target="_blank" class="btn-donation">
+                    <svg viewBox="0 0 24 24" fill="currentColor" width="20" height="20">
+                        <path d="M2 21V19H4V10C4 8.9 4.39 7.89 5 7.09V6H3V4H8V2H16V4H21V6H19V7.09C19.61 7.89 20 8.9 20 10V19H22V21H2ZM8 10C8 11.1 8.9 12 10 12H14C15.1 12 16 11.1 16 10H18C18 12.21 16.21 14 14 14H10C7.79 14 6 12.21 6 10H8ZM17 6V4H7V6H17Z"/>
+                    </svg>
+                    Buy Me a Coffee
+                </a>
+                <a href="https://github.com/sponsors/AnishJ9" target="_blank" class="btn-github">
+                    <svg viewBox="0 0 24 24" fill="currentColor" width="20" height="20">
+                        <path d="M12 2C6.48 2 2 6.48 2 12c0 4.42 2.87 8.17 6.84 9.49.5.09.66-.21.66-.47 0-.23-.01-.85-.01-1.67-2.78.6-3.37-1.34-3.37-1.34-.45-1.15-1.11-1.46-1.11-1.46-.91-.62.07-.61.07-.61 1 .07 1.53 1.03 1.53 1.03.89 1.52 2.34 1.08 2.91.83.09-.65.35-1.08.63-1.33-2.22-.25-4.55-1.11-4.55-4.94 0-1.09.39-1.98 1.03-2.68-.1-.25-.45-1.27.1-2.64 0 0 .84-.27 2.75 1.02A9.56 9.56 0 0112 6.8c.85.004 1.71.11 2.51.33 1.91-1.29 2.75-1.02 2.75-1.02.55 1.37.2 2.39.1 2.64.64.7 1.03 1.59 1.03 2.68 0 3.84-2.34 4.68-4.57 4.93.36.31.68.92.68 1.85 0 1.34-.01 2.42-.01 2.75 0 .27.16.58.67.48A10.02 10.02 0 0022 12c0-5.52-4.48-10-10-10z"/>
+                    </svg>
+                    GitHub Sponsors
+                </a>
+            </div>
+        </section>
+
         <!-- FAQ -->
         <section class="faq" id="ssh-help">
             <h2>Common Questions</h2>
@@ -463,7 +547,7 @@
 
             <div class="faq-item">
                 <h3>Is this really free?</h3>
-                <p>Yes! Pi-hole is open source, and this wizard is too. If it saves you time, consider <a href="#" style="color: var(--primary)">buying us a coffee</a>.</p>
+                <p>Yes! Pi-hole is open source, and this wizard is too. If it saves you time, consider <a href="https://buymeacoffee.com/anishj" target="_blank" style="color: var(--primary)">buying me a coffee</a>.</p>
             </div>
 
             <div class="faq-item">
