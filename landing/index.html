@@ -285,6 +285,79 @@
             font-size: 0.9375rem;
         }
 
+        /* Pi Shop Section */
+        .pi-shop {
+            margin-top: 2rem;
+            padding-top: 2rem;
+            border-top: 1px solid #334155;
+        }
+
+        .pi-shop h3 {
+            margin-bottom: 0.5rem;
+        }
+
+        .pi-shop > p {
+            color: var(--text-muted);
+            margin-bottom: 1rem;
+        }
+
+        .pi-options {
+            display: flex;
+            gap: 1rem;
+            justify-content: center;
+            flex-wrap: wrap;
+            margin-bottom: 1rem;
+        }
+
+        .pi-option {
+            background: var(--bg);
+            border: 1px solid #334155;
+            border-radius: 0.5rem;
+            padding: 1rem 1.5rem;
+            text-decoration: none;
+            color: var(--text);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 0.25rem;
+            transition: border-color 0.2s, transform 0.2s;
+            position: relative;
+        }
+
+        .pi-option:hover {
+            border-color: var(--primary);
+            transform: translateY(-2px);
+        }
+
+        .pi-option.recommended {
+            border-color: var(--primary);
+        }
+
+        .pi-option strong {
+            font-size: 1.1rem;
+        }
+
+        .pi-option span {
+            color: var(--text-muted);
+            font-size: 0.875rem;
+        }
+
+        .pi-badge {
+            position: absolute;
+            top: -10px;
+            background: var(--primary);
+            color: white;
+            font-size: 0.75rem;
+            padding: 0.2rem 0.5rem;
+            border-radius: 4px;
+        }
+
+        .affiliate-note {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            opacity: 0.7;
+        }
+
         /* Support Section */
         .support {
             background: linear-gradient(135deg, rgba(59, 130, 246, 0.1), rgba(34, 197, 94, 0.1));
@@ -517,6 +590,23 @@
                     </svg>
                     <span>Internet connection</span>
                 </div>
+            </div>
+
+            <div class="pi-shop">
+                <h3>Don't have a Raspberry Pi?</h3>
+                <p>Here's what we recommend:</p>
+                <div class="pi-options">
+                    <a href="https://amzn.to/4pNnAz9" target="_blank" rel="noopener" class="pi-option recommended">
+                        <span class="pi-badge">Best for beginners</span>
+                        <strong>Starter Kit</strong>
+                        <span>Everything you need included</span>
+                    </a>
+                    <a href="https://amzn.to/3KDzsFa" target="_blank" rel="noopener" class="pi-option">
+                        <strong>Board Only</strong>
+                        <span>If you have accessories already</span>
+                    </a>
+                </div>
+                <p class="affiliate-note">As an Amazon Associate, we earn from qualifying purchases.</p>
             </div>
         </section>
 
