@@ -350,12 +350,90 @@ get_local_ip() {
     echo $IP
 }
 
+# Check if port is available
+check_port() {
+    local port=$1
+    if command -v lsof &> /dev/null; then
+        if lsof -i :$port &> /dev/null; then
+            return 1
+        fi
+    elif command -v netstat &> /dev/null; then
+        if netstat -tuln | grep -q ":$port "; then
+            return 1
+        fi
+    elif command -v ss &> /dev/null; then
+        if ss -tuln | grep -q ":$port "; then
+            return 1
+        fi
+    fi
+    return 0
+}
+
+# Cleanup on failure
+cleanup_failed_install() {
+    echo ""
+    echo -e "${YELLOW}→${NC} Cleaning up failed installation..."
+    cd "$HOME" 2>/dev/null
+    docker rm -f pihole-wizard 2>/dev/null || true
+    if [ -d "$INSTALL_DIR" ]; then
+        rm -rf "$INSTALL_DIR"
+    fi
+    echo -e "${GREEN}✓${NC} Cleanup complete"
+}
+
+# Error handler with retry option
+handle_error() {
+    local error_msg="$1"
+    local retry_func="$2"
+
+    echo ""
+    echo -e "${RED}══════════════════════════════════════════════════════════${NC}"
+    echo -e "${RED}  Error: ${error_msg}${NC}"
+    echo -e "${RED}══════════════════════════════════════════════════════════${NC}"
+    echo ""
+
+    if [ -t 0 ] || [ -e /dev/tty ]; then
+        exec 3</dev/tty 2>/dev/null || exec 3<&0
+        echo -e "What would you like to do?"
+        echo ""
+        echo -e "  ${GREEN}1)${NC} Retry"
+        echo -e "  ${GREEN}2)${NC} Clean up and exit"
+        echo -e "  ${GREEN}3)${NC} Exit (keep partial install)"
+        echo ""
+        read -p "Choose [1/2/3]: " -n 1 -r REPLY <&3 2>/dev/null || REPLY="2"
+        echo ""
+
+        case $REPLY in
+            1)
+                echo -e "${YELLOW}Retrying...${NC}"
+                return 0  # Signal to retry
+                ;;
+            2)
+                cleanup_failed_install
+                exit 1
+                ;;
+            *)
+                echo -e "${YELLOW}Exiting. You may have a partial installation at $INSTALL_DIR${NC}"
+                exit 1
+                ;;
+        esac
+    else
+        cleanup_failed_install
+        exit 1
+    fi
+}
+
 # Main installation
 main() {
+    INSTALL_DIR="$HOME/pihole-wizard"
+
     # Check/install Docker
     if ! check_docker; then
         echo -e "${YELLOW}Docker not found. Installing...${NC}"
-        install_docker
+        if ! install_docker; then
+            handle_error "Failed to install Docker" || main
+            return
+        fi
 
         # If we can't run docker without sudo, we need to use newgrp or re-login
         if ! docker info &> /dev/null; then
@@ -372,18 +450,80 @@ main() {
 
     # Check Docker Compose
     if ! check_docker_compose; then
-        echo -e "${RED}Docker Compose not found and couldn't be installed.${NC}"
-        exit 1
+        handle_error "Docker Compose not found. Please install Docker Compose and try again." || main
+        return
     fi
 
+    # Check if port 8080 is available
+    echo -e "${YELLOW}→${NC} Checking port availability..."
+    if ! check_port 8080; then
+        echo -e "${YELLOW}!${NC} Port 8080 is already in use."
+        echo ""
+        echo -e "  This could be:"
+        echo -e "  • Pi-hole Wizard already running"
+        echo -e "  • Another web service"
+        echo ""
+
+        # Check if it's already our container
+        if docker ps --format '{{.Names}}' 2>/dev/null | grep -q "pihole-wizard"; then
+            echo -e "${GREEN}✓${NC} Pi-hole Wizard is already running!"
+            LOCAL_IP=$(get_local_ip)
+            echo ""
+            echo -e "  Access it at: ${BLUE}http://${LOCAL_IP}:8080${NC}"
+            echo ""
+            exit 0
+        fi
+
+        if [ -t 0 ] || [ -e /dev/tty ]; then
+            exec 3</dev/tty 2>/dev/null || exec 3<&0
+            echo -e "What would you like to do?"
+            echo ""
+            echo -e "  ${GREEN}1)${NC} Stop whatever is using port 8080 and continue"
+            echo -e "  ${GREEN}2)${NC} Exit"
+            echo ""
+            read -p "Choose [1/2]: " -n 1 -r REPLY <&3 2>/dev/null || REPLY="2"
+            echo ""
+
+            if [ "$REPLY" = "1" ]; then
+                echo -e "${YELLOW}→${NC} Attempting to free port 8080..."
+                $SUDO lsof -ti :8080 | xargs -r $SUDO kill -9 2>/dev/null || true
+                sleep 2
+                if ! check_port 8080; then
+                    echo -e "${RED}Could not free port 8080. Please manually stop the service using it.${NC}"
+                    exit 1
+                fi
+                echo -e "${GREEN}✓${NC} Port 8080 is now available"
+            else
+                exit 0
+            fi
+        else
+            echo -e "${RED}Port 8080 is in use. Please free it and try again.${NC}"
+            exit 1
+        fi
+    else
+        echo -e "${GREEN}✓${NC} Port 8080 is available"
+    fi
+
+    # Check internet connectivity
+    echo -e "${YELLOW}→${NC} Checking internet connection..."
+    if ! curl -s --connect-timeout 5 https://ghcr.io > /dev/null 2>&1; then
+        if ! ping -c 1 -W 5 8.8.8.8 > /dev/null 2>&1; then
+            handle_error "No internet connection. Please check your network and try again." || main
+            return
+        fi
+    fi
+    echo -e "${GREEN}✓${NC} Internet connection OK"
+
     # Create installation directory
-    INSTALL_DIR="$HOME/pihole-wizard"
     echo -e "${YELLOW}→${NC} Creating installation directory: $INSTALL_DIR"
-    mkdir -p "$INSTALL_DIR"
+    if ! mkdir -p "$INSTALL_DIR"; then
+        handle_error "Could not create directory $INSTALL_DIR" || main
+        return
+    fi
     cd "$INSTALL_DIR"
 
     # Download docker-compose.yml
-    echo -e "${YELLOW}→${NC} Downloading Pi-hole Wizard..."
+    echo -e "${YELLOW}→${NC} Configuring Pi-hole Wizard..."
 
     cat > docker-compose.yml << 'EOF'
 # Pi-hole Wizard Web
@@ -403,38 +543,80 @@ services:
     restart: unless-stopped
 EOF
 
-    # For local development/testing, build from source instead
-    # Uncomment below if you want to build locally:
-    # git clone https://github.com/AnishJ9/pihole-wizard-web.git .
-    # docker compose build
-
-    # Pull the image
+    # Pull the image with retry logic
     echo -e "${YELLOW}→${NC} Pulling Docker image (this may take a few minutes)..."
-    if docker compose pull 2>/dev/null || docker-compose pull 2>/dev/null; then
+
+    PULL_SUCCESS=false
+    for attempt in 1 2 3; do
+        if docker compose pull 2>/dev/null || docker-compose pull 2>/dev/null; then
+            PULL_SUCCESS=true
+            break
+        fi
+        if [ $attempt -lt 3 ]; then
+            echo -e "${YELLOW}!${NC} Pull failed. Retrying in 5 seconds... (attempt $attempt/3)"
+            sleep 5
+        fi
+    done
+
+    if [ "$PULL_SUCCESS" = true ]; then
         echo -e "${GREEN}✓${NC} Image downloaded"
     else
         echo -e "${YELLOW}!${NC} Could not pull image. Trying to build locally..."
         # Clone and build
         if command -v git &> /dev/null; then
             rm -rf docker-compose.yml
-            git clone https://github.com/AnishJ9/pihole-wizard-web.git .
-            docker compose build 2>/dev/null || docker-compose build
+            if ! git clone https://github.com/AnishJ9/pihole-wizard-web.git . 2>/dev/null; then
+                handle_error "Failed to download Pi-hole Wizard. Check your internet connection." || main
+                return
+            fi
+            if ! (docker compose build 2>/dev/null || docker-compose build); then
+                handle_error "Failed to build Pi-hole Wizard image." || main
+                return
+            fi
         else
-            echo -e "${RED}Git not installed. Please install git and try again.${NC}"
-            exit 1
+            handle_error "Git not installed. Please install git and try again." || main
+            return
         fi
     fi
 
     # Start the wizard
     echo -e "${YELLOW}→${NC} Starting Pi-hole Wizard..."
-    docker compose up -d 2>/dev/null || docker-compose up -d
+    if ! (docker compose up -d 2>/dev/null || docker-compose up -d); then
+        handle_error "Failed to start Pi-hole Wizard container." || main
+        return
+    fi
 
-    # Wait for startup
+    # Wait for startup and verify it's running
     echo -e "${YELLOW}→${NC} Waiting for wizard to start..."
     sleep 3
 
-    # Get the IP
+    # Verify container is running
+    if ! docker ps --format '{{.Names}}' | grep -q "pihole-wizard"; then
+        echo -e "${YELLOW}!${NC} Container may have failed to start. Checking logs..."
+        docker logs pihole-wizard 2>&1 | tail -10
+        handle_error "Pi-hole Wizard container failed to start." || main
+        return
+    fi
+
+    # Verify the service is responding
     LOCAL_IP=$(get_local_ip)
+    echo -e "${YELLOW}→${NC} Verifying service is responding..."
+
+    SERVICE_UP=false
+    for i in 1 2 3 4 5; do
+        if curl -s --connect-timeout 2 "http://localhost:8080/health" > /dev/null 2>&1 || \
+           curl -s --connect-timeout 2 "http://localhost:8080" > /dev/null 2>&1; then
+            SERVICE_UP=true
+            break
+        fi
+        sleep 2
+    done
+
+    if [ "$SERVICE_UP" = false ]; then
+        echo -e "${YELLOW}!${NC} Service may still be starting. Check http://${LOCAL_IP}:8080 in a moment."
+    else
+        echo -e "${GREEN}✓${NC} Service is responding"
+    fi
 
     echo ""
     echo -e "${GREEN}══════════════════════════════════════════════════════════${NC}"
