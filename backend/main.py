@@ -7,6 +7,7 @@ from pathlib import Path
 from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse
+from fastapi.middleware.cors import CORSMiddleware
 from contextlib import asynccontextmanager
 
 from backend.api import wizard, prerequisites, config, install, chat, update, blocklists, ssh, stats
@@ -31,6 +32,20 @@ app = FastAPI(
     description="Web-based Pi-hole & Unbound setup wizard with AI troubleshooting",
     version="1.0.0",
     lifespan=lifespan,
+)
+
+# Add CORS middleware to allow landing page to fetch stats
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=[
+        "https://pihole-wizard.com",
+        "https://www.pihole-wizard.com",
+        "http://localhost:3000",  # Local development
+        "http://127.0.0.1:3000",
+    ],
+    allow_credentials=True,
+    allow_methods=["GET"],  # Only allow GET for stats endpoint
+    allow_headers=["*"],
 )
 
 # Include API routers
