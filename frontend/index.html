@@ -1,0 +1,439 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pi-hole Wizard</title>
+    <link rel="stylesheet" href="/css/style.css">
+    <!-- Prism.js for syntax highlighting -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-tomorrow.min.css">
+    <!-- Marked.js for markdown rendering -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/marked/11.1.1/marked.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-yaml.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-bash.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-ini.min.js"></script>
+</head>
+<body>
+    <div class="app">
+        <!-- Header -->
+        <header class="header">
+            <div class="header-left">
+                <div class="logo">
+                    <svg viewBox="0 0 24 24" fill="currentColor" width="32" height="32">
+                        <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
+                    </svg>
+                    <h1>Pi-hole Wizard</h1>
+                </div>
+            </div>
+            <div class="header-right">
+                <button id="helpBtn" class="btn btn-text">
+                    <svg viewBox="0 0 24 24" fill="currentColor" width="20" height="20">
+                        <path d="M11 18h2v-2h-2v2zm1-16C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm0-14c-2.21 0-4 1.79-4 4h2c0-1.1.9-2 2-2s2 .9 2 2c0 2-3 1.75-3 5h2c0-2.25 3-2.5 3-5 0-2.21-1.79-4-4-4z"/>
+                    </svg>
+                    Help
+                </button>
+                <button id="chatBtn" class="btn btn-primary">
+                    <svg viewBox="0 0 24 24" fill="currentColor" width="20" height="20">
+                        <path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm0 14H6l-2 2V4h16v12z"/>
+                    </svg>
+                    AI Chat
+                </button>
+            </div>
+        </header>
+
+        <!-- Progress Stepper -->
+        <div class="progress-container">
+            <div class="progress-stepper">
+                <div class="step active" data-step="1">
+                    <div class="step-number">1</div>
+                    <div class="step-label">Prerequisites</div>
+                </div>
+                <div class="step-line"></div>
+                <div class="step" data-step="2">
+                    <div class="step-number">2</div>
+                    <div class="step-label">Deployment</div>
+                </div>
+                <div class="step-line"></div>
+                <div class="step" data-step="3">
+                    <div class="step-number">3</div>
+                    <div class="step-label">Network</div>
+                </div>
+                <div class="step-line"></div>
+                <div class="step" data-step="4">
+                    <div class="step-number">4</div>
+                    <div class="step-label">DNS</div>
+                </div>
+                <div class="step-line"></div>
+                <div class="step" data-step="5">
+                    <div class="step-number">5</div>
+                    <div class="step-label">DHCP</div>
+                </div>
+                <div class="step-line"></div>
+                <div class="step" data-step="6">
+                    <div class="step-number">6</div>
+                    <div class="step-label">Security</div>
+                </div>
+                <div class="step-line"></div>
+                <div class="step" data-step="7">
+                    <div class="step-number">7</div>
+                    <div class="step-label">Review</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <!-- Step 1: Prerequisites -->
+            <section class="step-content active" data-step="1">
+                <h2>System Prerequisites</h2>
+                <p class="step-description">Let's check if your system is ready for Pi-hole.</p>
+
+                <div id="prereqChecks" class="prereq-grid">
+                    <div class="prereq-card checking">
+                        <div class="prereq-icon">
+                            <div class="spinner"></div>
+                        </div>
+                        <div class="prereq-info">
+                            <h3>Checking system...</h3>
+                            <p>Please wait</p>
+                        </div>
+                    </div>
+                </div>
+
+                <button id="recheckBtn" class="btn btn-secondary" style="margin-top: 1rem; display: none;">
+                    Re-check Prerequisites
+                </button>
+            </section>
+
+            <!-- Step 2: Deployment Type -->
+            <section class="step-content" data-step="2">
+                <h2>Deployment Type</h2>
+                <p class="step-description">How would you like to install Pi-hole?</p>
+
+                <div class="option-cards">
+                    <label class="option-card selected">
+                        <input type="radio" name="deployment" value="docker" checked>
+                        <div class="option-header">
+                            <div class="option-icon">
+                                <svg viewBox="0 0 24 24" fill="currentColor" width="32" height="32">
+                                    <path d="M21 9.5v-1c0-.55-.45-1-1-1h-1v-1c0-.55-.45-1-1-1h-2V5c0-.55-.45-1-1-1H9c-.55 0-1 .45-1 1v1.5H6c-.55 0-1 .45-1 1v1H4c-.55 0-1 .45-1 1v1c0 2 1 4 4 4h1v3H7c-.55 0-1 .45-1 1s.45 1 1 1h10c.55 0 1-.45 1-1s-.45-1-1-1h-1v-3h1c3 0 4-2 4-4z"/>
+                                </svg>
+                            </div>
+                            <div>
+                                <h3>Docker</h3>
+                                <span class="badge recommended">Recommended</span>
+                            </div>
+                        </div>
+                        <p>Run Pi-hole in containers. Easy to set up, update, and manage. Works on any system with Docker.</p>
+                    </label>
+
+                    <label class="option-card">
+                        <input type="radio" name="deployment" value="bare-metal">
+                        <div class="option-header">
+                            <div class="option-icon">
+                                <svg viewBox="0 0 24 24" fill="currentColor" width="32" height="32">
+                                    <path d="M20 18c1.1 0 1.99-.9 1.99-2L22 6c0-1.1-.9-2-2-2H4c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2H0v2h24v-2h-4zM4 6h16v10H4V6z"/>
+                                </svg>
+                            </div>
+                            <h3>Bare Metal</h3>
+                        </div>
+                        <p>Install directly on the system. Better for dedicated Raspberry Pi setups. Requires Debian/Ubuntu.</p>
+                    </label>
+                </div>
+
+                <div id="osSelect" class="form-group" style="display: none; margin-top: 1.5rem;">
+                    <label for="os">Operating System</label>
+                    <select id="os" name="os">
+                        <option value="debian">Debian</option>
+                        <option value="ubuntu">Ubuntu</option>
+                        <option value="raspbian">Raspberry Pi OS</option>
+                        <option value="other">Other</option>
+                    </select>
+                </div>
+            </section>
+
+            <!-- Step 3: Network Configuration -->
+            <section class="step-content" data-step="3">
+                <h2>Network Configuration</h2>
+                <p class="step-description">Configure the network settings for Pi-hole.</p>
+
+                <div class="form-group">
+                    <label for="piholeIp">Pi-hole IP Address</label>
+                    <input type="text" id="piholeIp" name="pihole_ip" placeholder="192.168.1.2">
+                    <span class="help-text">This should be a static IP on your network. <span id="detectedIp"></span></span>
+                </div>
+
+                <div class="form-group" id="interfaceGroup" style="display: none;">
+                    <label for="networkInterface">Network Interface</label>
+                    <input type="text" id="networkInterface" name="network_interface" placeholder="eth0">
+                    <span class="help-text">The network interface Pi-hole will listen on.</span>
+                </div>
+
+                <div class="info-box">
+                    <strong>Important:</strong> Ensure your Pi-hole host has a static IP address.
+                    If using DHCP, configure a DHCP reservation on your router for this device.
+                </div>
+            </section>
+
+            <!-- Step 4: DNS Configuration -->
+            <section class="step-content" data-step="4">
+                <h2>DNS Configuration</h2>
+                <p class="step-description">Configure how Pi-hole resolves DNS queries.</p>
+
+                <div class="toggle-group">
+                    <label class="toggle">
+                        <input type="checkbox" id="enableUnbound" name="enable_unbound" checked>
+                        <span class="toggle-slider"></span>
+                        <span class="toggle-label">Enable Unbound (Recursive DNS)</span>
+                    </label>
+                    <p class="help-text">
+                        Unbound resolves DNS queries directly from root servers, providing maximum privacy
+                        and DNSSEC validation. <strong>Recommended</strong> for most users.
+                    </p>
+                </div>
+
+                <div id="upstreamDns" class="form-group" style="display: none;">
+                    <label for="upstreamDnsSelect">Upstream DNS Provider</label>
+                    <select id="upstreamDnsSelect" name="upstream_dns">
+                        <option value="cloudflare">Cloudflare (1.1.1.1)</option>
+                        <option value="google">Google (8.8.8.8)</option>
+                        <option value="quad9">Quad9 (9.9.9.9)</option>
+                        <option value="custom">Custom</option>
+                    </select>
+                </div>
+
+                <div id="customDns" class="form-group" style="display: none;">
+                    <label for="customDnsInput">Custom DNS Server</label>
+                    <input type="text" id="customDnsInput" name="custom_dns" placeholder="1.1.1.1">
+                </div>
+
+                <div class="toggle-group" style="margin-top: 1.5rem;">
+                    <label class="toggle">
+                        <input type="checkbox" id="ipv6" name="ipv6">
+                        <span class="toggle-slider"></span>
+                        <span class="toggle-label">Enable IPv6 Support</span>
+                    </label>
+                    <p class="help-text">Enable if your network uses IPv6. Leave disabled if unsure.</p>
+                </div>
+            </section>
+
+            <!-- Step 5: DHCP Configuration -->
+            <section class="step-content" data-step="5">
+                <h2>DHCP Configuration</h2>
+                <p class="step-description">Optionally use Pi-hole as your DHCP server.</p>
+
+                <div class="warning-box">
+                    <strong>Warning:</strong> If you enable DHCP, you must disable DHCP on your router first!
+                    Having two DHCP servers can cause network issues.
+                </div>
+
+                <div class="toggle-group" style="margin-top: 1rem;">
+                    <label class="toggle">
+                        <input type="checkbox" id="dhcpEnabled" name="dhcp_enabled">
+                        <span class="toggle-slider"></span>
+                        <span class="toggle-label">Enable DHCP Server</span>
+                    </label>
+                    <p class="help-text">Pi-hole will assign IP addresses to devices on your network.</p>
+                </div>
+
+                <div id="dhcpSettings" style="display: none; margin-top: 1.5rem;">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="dhcpStart">DHCP Range Start</label>
+                            <input type="text" id="dhcpStart" name="dhcp_start" placeholder="192.168.1.100">
+                        </div>
+                        <div class="form-group">
+                            <label for="dhcpEnd">DHCP Range End</label>
+                            <input type="text" id="dhcpEnd" name="dhcp_end" placeholder="192.168.1.200">
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label for="dhcpRouter">Router/Gateway IP</label>
+                        <input type="text" id="dhcpRouter" name="dhcp_router" placeholder="192.168.1.1">
+                        <span class="help-text">Usually your router's IP address.</span>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Step 6: Security -->
+            <section class="step-content" data-step="6">
+                <h2>Security Settings</h2>
+                <p class="step-description">Set the password for the Pi-hole web interface.</p>
+
+                <div class="form-group">
+                    <label for="webPassword">Web Interface Password</label>
+                    <div class="password-input">
+                        <input type="password" id="webPassword" name="web_password" placeholder="Enter a secure password">
+                        <button type="button" id="togglePassword" class="btn-icon">
+                            <svg viewBox="0 0 24 24" fill="currentColor" width="20" height="20">
+                                <path d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z"/>
+                            </svg>
+                        </button>
+                    </div>
+                    <span class="help-text">This password protects the Pi-hole admin interface.</span>
+                </div>
+
+                <div class="form-group">
+                    <label for="webPasswordConfirm">Confirm Password</label>
+                    <input type="password" id="webPasswordConfirm" placeholder="Confirm password">
+                </div>
+
+                <div id="passwordError" class="error-text" style="display: none;">
+                    Passwords do not match.
+                </div>
+            </section>
+
+            <!-- Step 7: Review & Install -->
+            <section class="step-content" data-step="7">
+                <h2>Review & Install</h2>
+                <p class="step-description">Review your configuration before installation.</p>
+
+                <div class="summary-card">
+                    <h3>Configuration Summary</h3>
+                    <table id="summaryTable" class="summary-table">
+                        <tbody>
+                            <!-- Populated by JavaScript -->
+                        </tbody>
+                    </table>
+                </div>
+
+                <div class="config-preview">
+                    <h3>Generated Files</h3>
+                    <div class="tabs">
+                        <button class="tab active" data-tab="docker-compose">docker-compose.yml</button>
+                        <button class="tab" data-tab="env">.env</button>
+                        <button class="tab" data-tab="unbound">unbound.conf</button>
+                    </div>
+                    <div class="tab-content">
+                        <pre id="configPreview"><code class="language-yaml">Loading...</code></pre>
+                    </div>
+                </div>
+
+                <div class="commands-preview">
+                    <h3>Commands That Will Run</h3>
+                    <pre id="commandsPreview"><code class="language-bash">Loading...</code></pre>
+                </div>
+
+                <div class="install-actions">
+                    <button id="downloadBtn" class="btn btn-secondary">
+                        <svg viewBox="0 0 24 24" fill="currentColor" width="20" height="20">
+                            <path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/>
+                        </svg>
+                        Download Configs
+                    </button>
+                    <button id="installBtn" class="btn btn-primary btn-large">
+                        <svg viewBox="0 0 24 24" fill="currentColor" width="20" height="20">
+                            <path d="M19 9l-7 7-7-7"/>
+                        </svg>
+                        One-Click Install
+                    </button>
+                </div>
+            </section>
+
+            <!-- Installation Progress (shown during install) -->
+            <section id="installProgress" class="step-content" style="display: none;">
+                <h2>Installing Pi-hole</h2>
+
+                <div class="progress-bar-container">
+                    <div id="installProgressBar" class="progress-bar" style="width: 0%"></div>
+                </div>
+                <p id="installStep" class="install-step">Preparing...</p>
+
+                <div class="log-output">
+                    <pre id="installLogs"></pre>
+                </div>
+
+                <button id="cancelInstall" class="btn btn-secondary">Cancel Installation</button>
+            </section>
+
+            <!-- Success Screen -->
+            <section id="successScreen" class="step-content" style="display: none;">
+                <div class="success-container">
+                    <div class="success-icon">
+                        <svg viewBox="0 0 24 24" fill="currentColor" width="64" height="64">
+                            <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
+                        </svg>
+                    </div>
+                    <h2>Pi-hole is Running!</h2>
+                    <p class="success-url">Access your dashboard at:</p>
+                    <a id="dashboardLink" href="#" target="_blank" class="dashboard-link">http://192.168.1.2/admin</a>
+
+                    <div class="donation-box">
+                        <h3>Enjoying Pi-hole Wizard?</h3>
+                        <p>This tool is free and open source. If it saved you time, consider supporting the project!</p>
+                        <div class="donation-buttons">
+                            <a href="https://buymeacoffee.com" target="_blank" class="btn btn-donation">
+                                Buy Me a Coffee
+                            </a>
+                            <a href="https://github.com/sponsors" target="_blank" class="btn btn-secondary">
+                                GitHub Sponsors
+                            </a>
+                        </div>
+                    </div>
+
+                    <button id="continueToDashboard" class="btn btn-primary btn-large">
+                        Continue to Dashboard
+                    </button>
+                </div>
+            </section>
+        </main>
+
+        <!-- Navigation Footer -->
+        <footer class="nav-footer">
+            <button id="backBtn" class="btn btn-secondary" disabled>
+                <svg viewBox="0 0 24 24" fill="currentColor" width="20" height="20">
+                    <path d="M15.41 7.41L14 6l-6 6 6 6 1.41-1.41L10.83 12z"/>
+                </svg>
+                Back
+            </button>
+            <button id="nextBtn" class="btn btn-primary">
+                Next
+                <svg viewBox="0 0 24 24" fill="currentColor" width="20" height="20">
+                    <path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"/>
+                </svg>
+            </button>
+        </footer>
+
+        <!-- AI Chat Sidebar -->
+        <div id="chatSidebar" class="chat-sidebar">
+            <div class="chat-header">
+                <h3>AI Troubleshooting</h3>
+                <button id="closeChatBtn" class="btn-icon">
+                    <svg viewBox="0 0 24 24" fill="currentColor" width="24" height="24">
+                        <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/>
+                    </svg>
+                </button>
+            </div>
+
+            <div class="api-key-input" id="apiKeySection">
+                <p>Enter your Anthropic API key to use AI chat:</p>
+                <input type="password" id="apiKeyInput" placeholder="sk-ant-...">
+                <button id="saveApiKey" class="btn btn-primary">Save Key</button>
+            </div>
+
+            <div class="quick-prompts" id="quickPrompts">
+                <button class="quick-prompt" data-prompt="DNS not working">DNS not working</button>
+                <button class="quick-prompt" data-prompt="Slow queries">Slow queries</button>
+                <button class="quick-prompt" data-prompt="Ads not blocked">Ads not blocked</button>
+            </div>
+
+            <div id="chatMessages" class="chat-messages">
+                <div class="chat-message assistant">
+                    <p>Hi! I can help you troubleshoot Pi-hole and Unbound issues. What's going wrong?</p>
+                </div>
+            </div>
+
+            <div class="chat-input-container">
+                <textarea id="chatInput" placeholder="Describe your issue..." rows="2"></textarea>
+                <button id="sendChatBtn" class="btn btn-primary">Send</button>
+            </div>
+        </div>
+        <div id="chatOverlay" class="chat-overlay"></div>
+    </div>
+
+    <script src="/js/api.js"></script>
+    <script src="/js/app.js"></script>
+    <script src="/js/chat.js"></script>
+</body>
+</html>

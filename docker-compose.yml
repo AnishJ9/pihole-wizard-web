@@ -1,0 +1,37 @@
+# Pi-hole Wizard Web - Docker Compose
+#
+# Quick Start:
+#   docker-compose up -d
+#
+# Then open http://localhost:8080 in your browser
+
+services:
+  pihole-wizard:
+    build: .
+    container_name: pihole-wizard
+    ports:
+      - "8080:8080"
+    volumes:
+      # Mount Docker socket for container management during installation
+      - /var/run/docker.sock:/var/run/docker.sock
+      # Output directory for generated configs
+      - ./output:/app/output
+    environment:
+      # Optional: Pre-set Anthropic API key for AI chat
+      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY:-}
+    restart: unless-stopped
+
+# For users who want to run the pre-built image:
+#
+# services:
+#   pihole-wizard:
+#     image: ghcr.io/anishjoseph/pihole-wizard:latest
+#     container_name: pihole-wizard
+#     ports:
+#       - "8080:8080"
+#     volumes:
+#       - /var/run/docker.sock:/var/run/docker.sock
+#       - ./output:/app/output
+#     environment:
+#       - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY:-}
+#     restart: unless-stopped

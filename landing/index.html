@@ -1,0 +1,496 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pi-hole Wizard - Easy Ad Blocking for Your Home</title>
+    <style>
+        :root {
+            --primary: #3b82f6;
+            --primary-dark: #2563eb;
+            --success: #22c55e;
+            --bg: #0f172a;
+            --bg-light: #1e293b;
+            --text: #f8fafc;
+            --text-muted: #94a3b8;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+
+        /* Hero Section */
+        .hero {
+            text-align: center;
+            padding: 4rem 2rem;
+        }
+
+        .hero h1 {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+            background: linear-gradient(135deg, var(--primary), var(--success));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .hero p {
+            font-size: 1.25rem;
+            color: var(--text-muted);
+            max-width: 600px;
+            margin: 0 auto 2rem;
+        }
+
+        .badge-row {
+            display: flex;
+            justify-content: center;
+            gap: 1rem;
+            flex-wrap: wrap;
+            margin-bottom: 2rem;
+        }
+
+        .badge {
+            background: var(--bg-light);
+            padding: 0.5rem 1rem;
+            border-radius: 2rem;
+            font-size: 0.875rem;
+            color: var(--text-muted);
+        }
+
+        /* Steps Section */
+        .steps {
+            background: var(--bg-light);
+            border-radius: 1rem;
+            padding: 2rem;
+            margin-bottom: 3rem;
+        }
+
+        .steps h2 {
+            text-align: center;
+            margin-bottom: 2rem;
+            font-size: 1.75rem;
+        }
+
+        .step-list {
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+        }
+
+        .step {
+            display: flex;
+            gap: 1.5rem;
+            align-items: flex-start;
+        }
+
+        .step-number {
+            width: 3rem;
+            height: 3rem;
+            background: var(--primary);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-size: 1.25rem;
+            flex-shrink: 0;
+        }
+
+        .step-content h3 {
+            font-size: 1.125rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .step-content p {
+            color: var(--text-muted);
+            font-size: 0.9375rem;
+        }
+
+        /* Command Box */
+        .command-section {
+            text-align: center;
+            margin-bottom: 3rem;
+        }
+
+        .command-section h2 {
+            margin-bottom: 1rem;
+        }
+
+        .command-section > p {
+            color: var(--text-muted);
+            margin-bottom: 1.5rem;
+        }
+
+        .command-box {
+            background: #0d1117;
+            border-radius: 0.5rem;
+            padding: 1.5rem;
+            position: relative;
+            text-align: left;
+            margin-bottom: 1rem;
+        }
+
+        .command-box code {
+            font-family: 'Monaco', 'Menlo', monospace;
+            font-size: 0.9375rem;
+            color: #58a6ff;
+            word-break: break-all;
+        }
+
+        .copy-btn {
+            position: absolute;
+            right: 1rem;
+            top: 50%;
+            transform: translateY(-50%);
+            background: var(--primary);
+            color: white;
+            border: none;
+            padding: 0.5rem 1rem;
+            border-radius: 0.375rem;
+            cursor: pointer;
+            font-size: 0.875rem;
+        }
+
+        .copy-btn:hover {
+            background: var(--primary-dark);
+        }
+
+        .copy-btn.copied {
+            background: var(--success);
+        }
+
+        .command-note {
+            font-size: 0.8125rem;
+            color: var(--text-muted);
+        }
+
+        /* What You Get */
+        .features {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 3rem;
+        }
+
+        .feature {
+            background: var(--bg-light);
+            border-radius: 0.75rem;
+            padding: 1.5rem;
+        }
+
+        .feature-icon {
+            width: 3rem;
+            height: 3rem;
+            background: rgba(59, 130, 246, 0.2);
+            border-radius: 0.5rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 1rem;
+            color: var(--primary);
+        }
+
+        .feature h3 {
+            margin-bottom: 0.5rem;
+        }
+
+        .feature p {
+            color: var(--text-muted);
+            font-size: 0.9375rem;
+        }
+
+        /* Requirements */
+        .requirements {
+            background: var(--bg-light);
+            border-radius: 1rem;
+            padding: 2rem;
+            margin-bottom: 3rem;
+        }
+
+        .requirements h2 {
+            margin-bottom: 1.5rem;
+        }
+
+        .req-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+        }
+
+        .req-item {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .req-item svg {
+            color: var(--success);
+            flex-shrink: 0;
+        }
+
+        /* FAQ */
+        .faq {
+            margin-bottom: 3rem;
+        }
+
+        .faq h2 {
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+
+        .faq-item {
+            background: var(--bg-light);
+            border-radius: 0.75rem;
+            padding: 1.5rem;
+            margin-bottom: 1rem;
+        }
+
+        .faq-item h3 {
+            margin-bottom: 0.5rem;
+            font-size: 1rem;
+        }
+
+        .faq-item p {
+            color: var(--text-muted);
+            font-size: 0.9375rem;
+        }
+
+        /* Footer */
+        footer {
+            text-align: center;
+            padding: 2rem;
+            color: var(--text-muted);
+            border-top: 1px solid #334155;
+        }
+
+        footer a {
+            color: var(--primary);
+            text-decoration: none;
+        }
+
+        /* Responsive */
+        @media (max-width: 640px) {
+            .hero h1 {
+                font-size: 2rem;
+            }
+
+            .step {
+                flex-direction: column;
+                text-align: center;
+            }
+
+            .step-number {
+                margin: 0 auto;
+            }
+
+            .copy-btn {
+                position: static;
+                transform: none;
+                margin-top: 1rem;
+                width: 100%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Hero -->
+        <section class="hero">
+            <h1>Pi-hole Wizard</h1>
+            <p>Block ads on every device in your home. No apps to install, no browser extensions needed. Just run one command on your Raspberry Pi.</p>
+            <div class="badge-row">
+                <span class="badge">100% Free</span>
+                <span class="badge">Open Source</span>
+                <span class="badge">Works on Raspberry Pi</span>
+                <span class="badge">No Technical Knowledge Required</span>
+            </div>
+        </section>
+
+        <!-- Command Section -->
+        <section class="command-section">
+            <h2>Get Started in 60 Seconds</h2>
+            <p>Open a terminal on your Raspberry Pi and paste this command:</p>
+            <div class="command-box">
+                <code id="installCommand">curl -sSL https://pihole-wizard.com/install.sh | bash</code>
+                <button class="copy-btn" onclick="copyCommand()">Copy</button>
+            </div>
+            <p class="command-note">This downloads and runs the Pi-hole Wizard. A web interface will open automatically.</p>
+        </section>
+
+        <!-- Steps -->
+        <section class="steps">
+            <h2>How It Works</h2>
+            <div class="step-list">
+                <div class="step">
+                    <div class="step-number">1</div>
+                    <div class="step-content">
+                        <h3>Run the Command on Your Pi</h3>
+                        <p>SSH into your Raspberry Pi or open a terminal. Paste the install command and press Enter. Don't have SSH set up? <a href="#ssh-help" style="color: var(--primary)">See below</a>.</p>
+                    </div>
+                </div>
+                <div class="step">
+                    <div class="step-number">2</div>
+                    <div class="step-content">
+                        <h3>Open the Wizard in Your Browser</h3>
+                        <p>The installer will show you a URL (like http://192.168.1.x:8080). Open it on your phone, tablet, or computer - any device on your network.</p>
+                    </div>
+                </div>
+                <div class="step">
+                    <div class="step-number">3</div>
+                    <div class="step-content">
+                        <h3>Answer a Few Questions</h3>
+                        <p>The wizard asks simple questions about your network. It auto-detects most settings. Just click Next, Next, Install.</p>
+                    </div>
+                </div>
+                <div class="step">
+                    <div class="step-number">4</div>
+                    <div class="step-content">
+                        <h3>Point Your Router to Pi-hole</h3>
+                        <p>Change your router's DNS setting to your Pi's IP address. The wizard tells you exactly what to do. Every device on your network will now be ad-free!</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Features -->
+        <section>
+            <h2 style="text-align: center; margin-bottom: 2rem;">What You Get</h2>
+            <div class="features">
+                <div class="feature">
+                    <div class="feature-icon">
+                        <svg viewBox="0 0 24 24" fill="currentColor" width="24" height="24">
+                            <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
+                        </svg>
+                    </div>
+                    <h3>Network-Wide Ad Blocking</h3>
+                    <p>Blocks ads on phones, tablets, smart TVs, and every device - even apps without ad-blocker support.</p>
+                </div>
+                <div class="feature">
+                    <div class="feature-icon">
+                        <svg viewBox="0 0 24 24" fill="currentColor" width="24" height="24">
+                            <path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4zm0 10.99h7c-.53 4.12-3.28 7.79-7 8.94V12H5V6.3l7-3.11v8.8z"/>
+                        </svg>
+                    </div>
+                    <h3>Enhanced Privacy</h3>
+                    <p>Blocks trackers and telemetry. Uses Unbound for private DNS resolution - your queries never leave your network.</p>
+                </div>
+                <div class="feature">
+                    <div class="feature-icon">
+                        <svg viewBox="0 0 24 24" fill="currentColor" width="24" height="24">
+                            <path d="M13 2.05v2.02c3.95.49 7 3.85 7 7.93 0 3.21-1.92 6-4.72 7.28L13 17v5h5l-1.22-1.22C19.91 19.07 22 15.76 22 12c0-5.18-3.95-9.45-9-9.95zM11 2.05C5.94 2.55 2 6.81 2 12c0 3.76 2.09 7.07 5.22 8.78L6 22h5v-5l-2.28 2.28C6.92 18 5 15.21 5 12c0-4.08 3.05-7.44 7-7.93V2.05z"/>
+                        </svg>
+                    </div>
+                    <h3>Faster Browsing</h3>
+                    <p>Pages load faster without ads. DNS caching speeds up frequently visited sites.</p>
+                </div>
+                <div class="feature">
+                    <div class="feature-icon">
+                        <svg viewBox="0 0 24 24" fill="currentColor" width="24" height="24">
+                            <path d="M19.14 12.94c.04-.31.06-.63.06-.94 0-.31-.02-.63-.06-.94l2.03-1.58c.18-.14.23-.41.12-.61l-1.92-3.32c-.12-.22-.37-.29-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54c-.04-.24-.24-.41-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96c-.22-.08-.47 0-.59.22L2.74 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.04.31-.06.63-.06.94s.02.63.06.94l-2.03 1.58c-.18.14-.23.41-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.01-1.58zM12 15.6c-1.98 0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6 3.6 1.62 3.6 3.6-1.62 3.6-3.6 3.6z"/>
+                        </svg>
+                    </div>
+                    <h3>Easy Management</h3>
+                    <p>Beautiful web dashboard to whitelist sites, view statistics, and manage your Pi-hole.</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- Requirements -->
+        <section class="requirements">
+            <h2>What You Need</h2>
+            <div class="req-grid">
+                <div class="req-item">
+                    <svg viewBox="0 0 24 24" fill="currentColor" width="20" height="20">
+                        <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/>
+                    </svg>
+                    <span>Raspberry Pi (3, 4, or 5)</span>
+                </div>
+                <div class="req-item">
+                    <svg viewBox="0 0 24 24" fill="currentColor" width="20" height="20">
+                        <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/>
+                    </svg>
+                    <span>Raspberry Pi OS installed</span>
+                </div>
+                <div class="req-item">
+                    <svg viewBox="0 0 24 24" fill="currentColor" width="20" height="20">
+                        <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/>
+                    </svg>
+                    <span>Connected to your network</span>
+                </div>
+                <div class="req-item">
+                    <svg viewBox="0 0 24 24" fill="currentColor" width="20" height="20">
+                        <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/>
+                    </svg>
+                    <span>Internet connection</span>
+                </div>
+            </div>
+        </section>
+
+        <!-- FAQ -->
+        <section class="faq" id="ssh-help">
+            <h2>Common Questions</h2>
+
+            <div class="faq-item">
+                <h3>How do I access my Raspberry Pi's terminal?</h3>
+                <p><strong>Option A - With a monitor:</strong> Connect a monitor and keyboard to your Pi, open the Terminal app.<br><br>
+                <strong>Option B - From another computer (SSH):</strong> Open Terminal (Mac/Linux) or PowerShell (Windows) and type: <code style="background: #0d1117; padding: 0.25rem 0.5rem; border-radius: 4px;">ssh pi@raspberrypi.local</code>. Default password is "raspberry".</p>
+            </div>
+
+            <div class="faq-item">
+                <h3>What if I don't know my Pi's IP address?</h3>
+                <p>The wizard auto-detects it! Or check your router's admin page for connected devices, or run <code style="background: #0d1117; padding: 0.25rem 0.5rem; border-radius: 4px;">hostname -I</code> on your Pi.</p>
+            </div>
+
+            <div class="faq-item">
+                <h3>Will this break my internet?</h3>
+                <p>No. If something goes wrong, just change your router's DNS back to automatic. The wizard also validates everything before making changes.</p>
+            </div>
+
+            <div class="faq-item">
+                <h3>Is this really free?</h3>
+                <p>Yes! Pi-hole is open source, and this wizard is too. If it saves you time, consider <a href="#" style="color: var(--primary)">buying us a coffee</a>.</p>
+            </div>
+
+            <div class="faq-item">
+                <h3>Can I use something other than a Raspberry Pi?</h3>
+                <p>Yes! Any Linux machine or Docker-capable system works. The wizard supports Docker and bare-metal installs.</p>
+            </div>
+        </section>
+
+        <!-- Footer -->
+        <footer>
+            <p>Pi-hole Wizard is open source. <a href="https://github.com/anishjoseph/pihole-wizard-web">View on GitHub</a></p>
+            <p style="margin-top: 0.5rem; font-size: 0.875rem;">Not affiliated with Pi-hole, LLC. Pi-hole is a registered trademark.</p>
+        </footer>
+    </div>
+
+    <script>
+        function copyCommand() {
+            const command = document.getElementById('installCommand').textContent;
+            navigator.clipboard.writeText(command);
+            const btn = document.querySelector('.copy-btn');
+            btn.textContent = 'Copied!';
+            btn.classList.add('copied');
+            setTimeout(() => {
+                btn.textContent = 'Copy';
+                btn.classList.remove('copied');
+            }, 2000);
+        }
+    </script>
+</body>
+</html>
