@@ -496,17 +496,6 @@
         <section class="command-section">
             <h2>Get Started in 60 Seconds</h2>
 
-            <!-- Find Pi Helper -->
-            <div style="background: rgba(59, 130, 246, 0.1); border: 1px solid rgba(59, 130, 246, 0.3); border-radius: 8px; padding: 1rem; margin-bottom: 1.5rem;">
-                <p style="margin: 0 0 0.5rem 0; font-size: 0.9rem;">
-                    <strong>Don't know your Pi's IP address?</strong> Run this on your Mac or Linux computer first:
-                </p>
-                <div class="command-box" style="margin: 0;">
-                    <code id="scanCommand">curl -sSL https://pihole-wizard.com/scan.sh | bash</code>
-                    <button class="copy-btn" onclick="copyScanCommand()">Copy</button>
-                </div>
-            </div>
-
             <p>Open a terminal on your Raspberry Pi and paste this command:</p>
             <div class="command-box">
                 <code id="installCommand">curl -sSL https://pihole-wizard.com/install.sh | bash</code>
@@ -737,17 +726,6 @@
             }, 2000);
         }
 
-        function copyScanCommand() {
-            const command = document.getElementById('scanCommand').textContent;
-            navigator.clipboard.writeText(command);
-            const btn = event.target;
-            btn.textContent = 'Copied!';
-            btn.classList.add('copied');
-            setTimeout(() => {
-                btn.textContent = 'Copy';
-                btn.classList.remove('copied');
-            }, 2000);
-        }
     </script>
 </body>
 </html>
