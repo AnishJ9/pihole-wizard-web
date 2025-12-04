@@ -194,7 +194,7 @@ else
     else
         echo -e "  ${BLUE}Which Pi do you want to connect to?${NC}"
         echo -n "  Enter number [1-${#FOUND_PIS[@]}]: "
-        read -r selection
+        read -r selection < /dev/tty
 
         if [[ "$selection" =~ ^[0-9]+$ ]] && [ "$selection" -ge 1 ] && [ "$selection" -le ${#FOUND_PIS[@]} ]; then
             SELECTED_IP=$(echo "${FOUND_PIS[$((selection-1))]}" | cut -d'|' -f1)
@@ -215,6 +215,6 @@ else
     echo -e "  ${BLUE}Once connected, the installer will run automatically.${NC}"
     echo ""
 
-    # SSH in and run the installer
-    ssh -t "pi@$SELECTED_IP" "curl -sSL https://pihole-wizard.com/install.sh | bash"
+    # SSH in and run the installer (exec to properly handle stdin/tty)
+    exec ssh -t "pi@$SELECTED_IP" "curl -sSL https://pihole-wizard.com/install.sh | bash" < /dev/tty
 fi
