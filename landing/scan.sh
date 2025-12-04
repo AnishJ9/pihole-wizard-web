@@ -29,13 +29,26 @@ echo -e "${YELLOW}→${NC} Checking common hostnames..."
 MDNS_HOSTS=("raspberrypi.local" "raspberrypi4.local" "raspberrypi5.local" "pihole.local" "pi.local")
 
 for hostname in "${MDNS_HOSTS[@]}"; do
-    # Try to resolve the hostname
-    if command -v getent &> /dev/null; then
-        ip=$(getent hosts "$hostname" 2>/dev/null | awk '{print $1}')
-    elif command -v dscacheutil &> /dev/null; then
-        # macOS
+    ip=""
+
+    # Try multiple methods to resolve .local hostnames
+    # Method 1: avahi-resolve (Linux with avahi)
+    if [ -z "$ip" ] && command -v avahi-resolve &> /dev/null; then
+        ip=$(avahi-resolve -n "$hostname" 2>/dev/null | awk '{print $2}')
+    fi
+
+    # Method 2: dscacheutil (macOS)
+    if [ -z "$ip" ] && command -v dscacheutil &> /dev/null; then
         ip=$(dscacheutil -q host -a name "$hostname" 2>/dev/null | grep "ip_address" | awk '{print $2}')
-    else
+    fi
+
+    # Method 3: getent (may work if nsswitch.conf includes mdns)
+    if [ -z "$ip" ] && command -v getent &> /dev/null; then
+        ip=$(getent hosts "$hostname" 2>/dev/null | awk '{print $1}')
+    fi
+
+    # Method 4: ping (fallback, works on most systems)
+    if [ -z "$ip" ]; then
         ip=$(ping -c 1 -W 1 "$hostname" 2>/dev/null | grep -oE '([0-9]{1,3}\.){3}[0-9]{1,3}' | head -1)
     fi
 
