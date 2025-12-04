@@ -116,22 +116,64 @@ class ChatManager {
         // Add user message to chat
         this.addMessage(message, 'user');
 
-        // Show loading indicator
-        const loadingId = this.addLoadingMessage();
+        // Create streaming message container
+        const messageId = this.addStreamingMessage();
 
         try {
-            const response = await API.sendChatMessage(message, this.apiKey);
-            this.removeMessage(loadingId);
-            this.addMessage(response.response, 'assistant');
+            const response = await fetch('/api/chat/message/stream', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ message, api_key: this.apiKey })
+            });
+
+            if (!response.ok) {
+                throw new Error(`HTTP ${response.status}`);
+            }
+
+            const reader = response.body.getReader();
+            const decoder = new TextDecoder();
+            let fullText = '';
+
+            while (true) {
+                const { done, value } = await reader.read();
+                if (done) break;
+
+                const chunk = decoder.decode(value);
+                const lines = chunk.split('\n');
+
+                for (const line of lines) {
+                    if (line.startsWith('data: ')) {
+                        try {
+                            const data = JSON.parse(line.slice(6));
+                            if (data.text) {
+                                fullText += data.text;
+                                this.updateStreamingMessage(messageId, fullText);
+                            } else if (data.error) {
+                                if (data.error.includes('Invalid API key')) {
+                                    this.apiKey = '';
+                                    localStorage.removeItem('anthropic_api_key');
+                                    this.updateApiKeyUI();
+                                }
+                                this.updateStreamingMessage(messageId, 'Error: ' + data.error);
+                            }
+                        } catch (e) {
+                            // Ignore JSON parse errors for incomplete chunks
+                        }
+                    }
+                }
+            }
+
+            // Final render with syntax highlighting
+            this.finalizeStreamingMessage(messageId, fullText);
+
         } catch (e) {
-            this.removeMessage(loadingId);
-            if (e.message.includes('Invalid API key') || e.message.includes('401')) {
+            if (e.message.includes('401')) {
                 this.apiKey = '';
                 localStorage.removeItem('anthropic_api_key');
                 this.updateApiKeyUI();
-                this.addMessage('Invalid API key. Please enter a valid key.', 'assistant');
+                this.updateStreamingMessage(messageId, 'Invalid API key. Please enter a valid key.');
             } else {
-                this.addMessage('Error: ' + e.message, 'assistant');
+                this.updateStreamingMessage(messageId, 'Error: ' + e.message);
             }
         }
     }
@@ -157,6 +199,41 @@ class ChatManager {
         container.scrollTop = container.scrollHeight;
 
         return message.id;
+    }
+
+    addStreamingMessage() {
+        const container = document.getElementById('chatMessages');
+        const message = document.createElement('div');
+        message.className = 'chat-message assistant streaming';
+        message.id = `msg-stream-${Date.now()}`;
+        message.innerHTML = '<p><span class="cursor">|</span></p>';
+        container.appendChild(message);
+        container.scrollTop = container.scrollHeight;
+        return message.id;
+    }
+
+    updateStreamingMessage(id, content) {
+        const message = document.getElementById(id);
+        if (message) {
+            // Simple text update while streaming (no markdown yet)
+            message.innerHTML = `<p>${this.escapeHtml(content)}<span class="cursor">|</span></p>`;
+            const container = document.getElementById('chatMessages');
+            container.scrollTop = container.scrollHeight;
+        }
+    }
+
+    finalizeStreamingMessage(id, content) {
+        const message = document.getElementById(id);
+        if (message) {
+            message.classList.remove('streaming');
+            // Render markdown and highlight code
+            message.innerHTML = marked.parse(content);
+            message.querySelectorAll('pre code').forEach(block => {
+                Prism.highlightElement(block);
+            });
+            const container = document.getElementById('chatMessages');
+            container.scrollTop = container.scrollHeight;
+        }
     }
 
     addLoadingMessage() {

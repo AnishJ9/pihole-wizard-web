@@ -3,7 +3,9 @@ API routes for AI-powered chat assistance.
 """
 
 from fastapi import APIRouter, HTTPException
+from fastapi.responses import StreamingResponse
 from typing import List, Dict
+import json
 
 from backend.models import ChatRequest, ChatResponse, ChatMessage
 
@@ -185,6 +187,69 @@ async def send_message(request: ChatRequest):
         raise HTTPException(status_code=401, detail="Invalid API key")
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.post("/message/stream")
+async def send_message_stream(request: ChatRequest):
+    """Send a message to the AI assistant and stream the response."""
+    global _chat_history
+
+    if not request.api_key:
+        raise HTTPException(
+            status_code=400,
+            detail="API key required. Enter your Anthropic API key to use the chat feature."
+        )
+
+    try:
+        import anthropic
+        client = anthropic.Anthropic(api_key=request.api_key)
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=f"Invalid API key: {str(e)}")
+
+    # Add user message to history
+    _chat_history.append({
+        "role": "user",
+        "content": request.message
+    })
+
+    # Keep history manageable
+    if len(_chat_history) > 20:
+        _chat_history = _chat_history[-20:]
+
+    async def generate():
+        full_response = ""
+        try:
+            with client.messages.stream(
+                model="claude-sonnet-4-20250514",
+                max_tokens=2048,
+                system=build_system_prompt(),
+                messages=_chat_history
+            ) as stream:
+                for text in stream.text_stream:
+                    full_response += text
+                    yield f"data: {json.dumps({'text': text})}\n\n"
+
+            # Add complete response to history
+            _chat_history.append({
+                "role": "assistant",
+                "content": full_response
+            })
+
+            yield f"data: {json.dumps({'done': True})}\n\n"
+
+        except anthropic.AuthenticationError:
+            yield f"data: {json.dumps({'error': 'Invalid API key'})}\n\n"
+        except Exception as e:
+            yield f"data: {json.dumps({'error': str(e)})}\n\n"
+
+    return StreamingResponse(
+        generate(),
+        media_type="text/event-stream",
+        headers={
+            "Cache-Control": "no-cache",
+            "Connection": "keep-alive",
+        }
+    )
 
 
 @router.get("/history")

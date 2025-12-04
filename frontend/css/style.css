@@ -883,6 +883,17 @@ body {
     font-size: 0.8125rem;
 }
 
+.chat-message.streaming .cursor {
+    animation: blink 0.7s infinite;
+    font-weight: bold;
+    color: var(--primary);
+}
+
+@keyframes blink {
+    0%, 50% { opacity: 1; }
+    51%, 100% { opacity: 0; }
+}
+
 .chat-input-container {
     padding: 1rem;
     border-top: 1px solid var(--border);
