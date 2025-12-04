@@ -301,10 +301,9 @@ class WizardApp {
         document.getElementById('copyConfigBtn').addEventListener('click', () => this.copyConfig());
         document.getElementById('copyCommandsBtn').addEventListener('click', () => this.copyCommands());
 
-        // Download configs
+        // Review page buttons
+        document.getElementById('reviewBackBtn').addEventListener('click', () => this.prevStep());
         document.getElementById('downloadBtn').addEventListener('click', () => this.downloadConfigs());
-
-        // One-click install
         document.getElementById('installBtn').addEventListener('click', () => this.startInstallation());
 
         // Cancel install
@@ -381,14 +380,16 @@ class WizardApp {
         // Update navigation buttons
         document.getElementById('backBtn').disabled = this.currentStep === 1;
         const nextBtn = document.getElementById('nextBtn');
-        nextBtn.textContent = this.currentStep === this.totalSteps ? 'Finish' : 'Next';
+        nextBtn.textContent = 'Next';
 
-        // Update footer visibility
+        // Update footer visibility - hide on step 7 (review page has its own action buttons)
         const footer = document.querySelector('.nav-footer');
         const installProgress = document.getElementById('installProgress');
         const successScreen = document.getElementById('successScreen');
+        const isReviewStep = this.currentStep === this.totalSteps;
         footer.style.display = installProgress.classList.contains('active') ||
-                               successScreen.classList.contains('active') ? 'none' : 'flex';
+                               successScreen.classList.contains('active') ||
+                               isReviewStep ? 'none' : 'flex';
     }
 
     updateOptionCards() {
