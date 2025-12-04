@@ -7,7 +7,7 @@
 
 services:
   pihole-wizard:
-    build: .
+    image: ghcr.io/anishj9/pihole-wizard-web:latest
     container_name: pihole-wizard
     ports:
       - "8080:8080"
@@ -21,11 +21,11 @@ services:
       - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY:-}
     restart: unless-stopped
 
-# For users who want to run the pre-built image:
+# For development (build from source):
 #
 # services:
 #   pihole-wizard:
-#     image: ghcr.io/anishjoseph/pihole-wizard:latest
+#     build: .
 #     container_name: pihole-wizard
 #     ports:
 #       - "8080:8080"

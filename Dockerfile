@@ -3,7 +3,7 @@
 
 FROM python:3.11-slim
 
-# Install system dependencies (including gcc for building netifaces)
+# Install system dependencies (including Docker CLI for Pi-hole installation)
 RUN apt-get update && apt-get install -y \
     curl \
     iproute2 \
@@ -11,6 +11,8 @@ RUN apt-get update && apt-get install -y \
     lsof \
     gcc \
     python3-dev \
+    docker.io \
+    docker-compose \
     && rm -rf /var/lib/apt/lists/*
 
 # Set working directory
