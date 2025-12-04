@@ -114,12 +114,19 @@ main() {
         # If we can't run docker without sudo, we need to use newgrp or re-login
         if ! docker info &> /dev/null; then
             echo ""
-            echo -e "${YELLOW}══════════════════════════════════════════════════════════${NC}"
-            echo -e "${YELLOW}  Docker was installed but requires a new login session.${NC}"
-            echo -e "${YELLOW}  Please run: ${NC}${GREEN}newgrp docker${NC}${YELLOW} and then re-run this script.${NC}"
-            echo -e "${YELLOW}  Or log out and log back in, then run:${NC}"
-            echo -e "${GREEN}  curl -sSL https://pihole-wizard.com/install.sh | bash${NC}"
-            echo -e "${YELLOW}══════════════════════════════════════════════════════════${NC}"
+            echo -e "${YELLOW}══════════════════════════════════════════════════════════════════${NC}"
+            echo -e "${YELLOW}  Docker installed! One more step needed on your Raspberry Pi.${NC}"
+            echo -e "${YELLOW}══════════════════════════════════════════════════════════════════${NC}"
+            echo ""
+            echo -e "  Your user needs permission to run Docker commands."
+            echo -e "  ${BLUE}Stay in this SSH session${NC} and run these two commands:"
+            echo ""
+            echo -e "  ${GREEN}1. newgrp docker${NC}"
+            echo -e "  ${GREEN}2. curl -sSL https://pihole-wizard.com/install.sh | bash${NC}"
+            echo ""
+            echo -e "  ${YELLOW}(Don't close this terminal or log out - just run the commands above)${NC}"
+            echo ""
+            echo -e "${YELLOW}══════════════════════════════════════════════════════════════════${NC}"
             exit 0
         fi
     fi

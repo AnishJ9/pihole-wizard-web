@@ -6,7 +6,9 @@ Detects Docker, available ports, network configuration.
 import shutil
 import socket
 import subprocess
-from typing import Optional, Tuple
+import platform
+import re
+from typing import Optional, Tuple, List, Dict
 
 from backend.models import PrerequisiteCheck, PrerequisiteResponse, CheckStatus
 
@@ -204,6 +206,139 @@ class PrerequisiteChecker:
         except Exception:
             pass
         return None
+
+    def is_raspberry_pi(self) -> bool:
+        """Check if the current machine is a Raspberry Pi."""
+        # Check /proc/cpuinfo for Raspberry Pi
+        try:
+            with open("/proc/cpuinfo", "r") as f:
+                cpuinfo = f.read().lower()
+                if "raspberry" in cpuinfo or "bcm" in cpuinfo:
+                    return True
+        except Exception:
+            pass
+
+        # Check /proc/device-tree/model
+        try:
+            with open("/proc/device-tree/model", "r") as f:
+                model = f.read().lower()
+                if "raspberry" in model:
+                    return True
+        except Exception:
+            pass
+
+        # Check hostname
+        try:
+            hostname = socket.gethostname().lower()
+            if "raspberry" in hostname or "pi" in hostname:
+                return True
+        except Exception:
+            pass
+
+        # Check architecture (ARM is a hint but not definitive)
+        arch = platform.machine().lower()
+        if arch in ("aarch64", "armv7l", "armv6l"):
+            # ARM architecture, could be a Pi
+            # Do additional check for Debian/Raspbian
+            try:
+                with open("/etc/os-release", "r") as f:
+                    os_info = f.read().lower()
+                    if "raspbian" in os_info or "raspberry" in os_info:
+                        return True
+            except Exception:
+                pass
+
+        return False
+
+    def scan_for_raspberry_pis(self) -> List[Dict[str, str]]:
+        """Scan the local network for Raspberry Pi devices."""
+        found_pis = []
+
+        # Get the local network subnet
+        local_ip, _ = self.detect_network()
+        if not local_ip:
+            return found_pis
+
+        # Try mDNS/Bonjour first (raspberrypi.local)
+        mdns_hosts = ["raspberrypi.local", "raspberrypi4.local", "raspberrypi5.local", "pihole.local"]
+        for hostname in mdns_hosts:
+            try:
+                ip = socket.gethostbyname(hostname)
+                if ip and ip != local_ip:
+                    found_pis.append({
+                        "ip": ip,
+                        "hostname": hostname,
+                        "method": "mDNS"
+                    })
+            except socket.gaierror:
+                pass
+
+        # Try ARP scan if we have arp command
+        try:
+            result = subprocess.run(
+                ["arp", "-a"],
+                capture_output=True,
+                text=True,
+                timeout=5,
+            )
+            if result.returncode == 0:
+                # Parse ARP table looking for Raspberry Pi MAC prefixes
+                # Raspberry Pi Foundation OUI prefixes
+                pi_mac_prefixes = [
+                    "b8:27:eb",  # RPi Foundation
+                    "dc:a6:32",  # RPi Foundation
+                    "e4:5f:01",  # RPi Foundation
+                    "d8:3a:dd",  # RPi 4/5
+                    "2c:cf:67",  # RPi 5
+                ]
+                for line in result.stdout.split("\n"):
+                    line_lower = line.lower()
+                    for prefix in pi_mac_prefixes:
+                        if prefix in line_lower:
+                            # Extract IP from ARP output
+                            # Format varies: "hostname (192.168.1.x) at aa:bb:cc:dd:ee:ff"
+                            ip_match = re.search(r'\((\d+\.\d+\.\d+\.\d+)\)', line)
+                            if ip_match:
+                                ip = ip_match.group(1)
+                                if ip != local_ip and not any(p["ip"] == ip for p in found_pis):
+                                    found_pis.append({
+                                        "ip": ip,
+                                        "hostname": None,
+                                        "method": "ARP (MAC prefix)"
+                                    })
+                            break
+        except Exception:
+            pass
+
+        # Try nmap ping scan if available (more thorough but slower)
+        if not found_pis:
+            try:
+                subnet = ".".join(local_ip.split(".")[:3]) + ".0/24"
+                result = subprocess.run(
+                    ["nmap", "-sn", subnet, "--host-timeout", "1s"],
+                    capture_output=True,
+                    text=True,
+                    timeout=30,
+                )
+                if result.returncode == 0:
+                    # Look for Raspberry Pi in nmap output
+                    current_ip = None
+                    for line in result.stdout.split("\n"):
+                        if "Nmap scan report for" in line:
+                            ip_match = re.search(r'(\d+\.\d+\.\d+\.\d+)', line)
+                            if ip_match:
+                                current_ip = ip_match.group(1)
+                        if current_ip and "raspberry" in line.lower():
+                            if current_ip != local_ip and not any(p["ip"] == current_ip for p in found_pis):
+                                found_pis.append({
+                                    "ip": current_ip,
+                                    "hostname": None,
+                                    "method": "nmap"
+                                })
+            except Exception:
+                pass
+
+        return found_pis
 
     def detect_network(self) -> Tuple[Optional[str], Optional[str]]:
         """Detect the primary network interface and IP address."""
