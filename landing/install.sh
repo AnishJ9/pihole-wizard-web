@@ -65,7 +65,7 @@ if ! detect_device; then
     echo -e "  ${GREEN}2)${NC} Continue anyway (I know what I'm doing)"
     echo -e "  ${GREEN}3)${NC} Exit"
     echo ""
-    read -p "Choose [1/2/3]: " -n 1 -r
+    read -p "Choose [1/2/3]: " -n 1 -r REPLY </dev/tty
     echo ""
 
     case $REPLY in
@@ -73,12 +73,12 @@ if ! detect_device; then
             echo ""
             echo -e "${BLUE}Let's connect to your Raspberry Pi!${NC}"
             echo ""
-            read -p "Enter your Pi's IP address (e.g., 192.168.1.100): " PI_IP
+            read -p "Enter your Pi's IP address (e.g., 192.168.1.100): " PI_IP </dev/tty
             if [ -z "$PI_IP" ]; then
                 echo -e "${RED}No IP address entered. Exiting.${NC}"
                 exit 1
             fi
-            read -p "Enter username (default: pi): " PI_USER
+            read -p "Enter username (default: pi): " PI_USER </dev/tty
             PI_USER=${PI_USER:-pi}
             echo ""
             echo -e "${YELLOW}Connecting to ${PI_USER}@${PI_IP}...${NC}"
