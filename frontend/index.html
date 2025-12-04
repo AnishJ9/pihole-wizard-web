@@ -292,71 +292,19 @@
 
                 <div class="blocklists-section" style="margin-top: 2rem;">
                     <h3>Community Blocklists</h3>
-                    <p class="help-text" style="margin-bottom: 1rem;">Select additional blocklists to enhance ad blocking. Pi-hole's default list is always included.</p>
+                    <p class="help-text" style="margin-bottom: 1rem;">Select blocklists to enhance ad blocking. Click the arrow to view and customize individual domains.</p>
 
                     <div id="blocklistPresets" class="blocklist-grid">
-                        <label class="blocklist-card">
-                            <input type="checkbox" name="blocklist" value="stevenblack" checked>
-                            <div class="blocklist-content">
-                                <div class="blocklist-header">
-                                    <strong>StevenBlack Unified</strong>
-                                    <span class="blocklist-badge default">Default</span>
-                                </div>
-                                <p>Comprehensive hosts file combining multiple sources. ~130k domains.</p>
-                            </div>
-                        </label>
+                        <!-- Blocklists will be rendered by JavaScript -->
+                    </div>
 
-                        <label class="blocklist-card">
-                            <input type="checkbox" name="blocklist" value="oisd">
-                            <div class="blocklist-content">
-                                <div class="blocklist-header">
-                                    <strong>OISD Big</strong>
-                                    <span class="blocklist-badge popular">Popular</span>
-                                </div>
-                                <p>One of the most popular lists. Blocks ads, trackers, malware. ~200k domains.</p>
-                            </div>
-                        </label>
-
-                        <label class="blocklist-card">
-                            <input type="checkbox" name="blocklist" value="hagezi">
-                            <div class="blocklist-content">
-                                <div class="blocklist-header">
-                                    <strong>Hagezi Multi Pro</strong>
-                                    <span class="blocklist-badge popular">Popular</span>
-                                </div>
-                                <p>Balanced list for ads, tracking, analytics, and telemetry. ~300k domains.</p>
-                            </div>
-                        </label>
-
-                        <label class="blocklist-card">
-                            <input type="checkbox" name="blocklist" value="firebog-ticked">
-                            <div class="blocklist-content">
-                                <div class="blocklist-header">
-                                    <strong>Firebog Ticked Lists</strong>
-                                </div>
-                                <p>Curated collection of safe-to-use lists from The Firebog. ~500k domains.</p>
-                            </div>
-                        </label>
-
-                        <label class="blocklist-card">
-                            <input type="checkbox" name="blocklist" value="adguard-dns">
-                            <div class="blocklist-content">
-                                <div class="blocklist-header">
-                                    <strong>AdGuard DNS Filter</strong>
-                                </div>
-                                <p>AdGuard's curated filter for DNS-level blocking. ~50k domains.</p>
-                            </div>
-                        </label>
-
-                        <label class="blocklist-card">
-                            <input type="checkbox" name="blocklist" value="nocoin">
-                            <div class="blocklist-content">
-                                <div class="blocklist-header">
-                                    <strong>NoCoin + Malware</strong>
-                                </div>
-                                <p>Blocks cryptocurrency miners and malware domains. ~10k domains.</p>
-                            </div>
-                        </label>
+                    <div class="custom-blocklist-section" style="margin-top: 1.5rem;">
+                        <button id="addCustomBlocklist" class="btn btn-secondary" style="width: 100%;">
+                            <svg viewBox="0 0 24 24" fill="currentColor" width="20" height="20">
+                                <path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/>
+                            </svg>
+                            Create Custom Blocklist
+                        </button>
                     </div>
                 </div>
             </section>

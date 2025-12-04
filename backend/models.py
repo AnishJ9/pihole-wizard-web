@@ -27,6 +27,14 @@ class CheckStatus(str, Enum):
     CHECKING = "checking"
 
 
+class CustomBlocklist(BaseModel):
+    """A custom user-created blocklist."""
+    id: str
+    name: str
+    description: Optional[str] = None
+    domains: List[str] = []
+
+
 class WizardState(BaseModel):
     """Current state of the wizard configuration."""
     deployment: Optional[DeploymentType] = None
@@ -43,6 +51,9 @@ class WizardState(BaseModel):
     dhcp_router: Optional[str] = None
     custom_dns: Optional[str] = None
     blocklists: List[str] = []  # Selected blocklist preset IDs
+    blocklist_exclusions: Optional[dict] = None  # { listId: [excluded domains] }
+    blocklist_additions: Optional[dict] = None  # { listId: [added domains] }
+    custom_blocklists: Optional[List[CustomBlocklist]] = None  # User-created lists
 
 
 class PrerequisiteCheck(BaseModel):

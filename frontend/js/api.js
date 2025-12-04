@@ -180,4 +180,9 @@ const API = {
     async getQuickPrompts() {
         return this.get('/api/chat/quick-prompts');
     },
+
+    // Blocklists
+    async fetchBlocklistSample(listId) {
+        return this.get(`/api/blocklists/${listId}/sample`);
+    },
 };

@@ -24,15 +24,66 @@ class WizardApp {
             blocklists: ['stevenblack'],
         };
 
-        // Blocklist URLs mapping
-        this.blocklistUrls = {
-            'stevenblack': 'https://raw.githubusercontent.com/StevenBlack/hosts/master/hosts',
-            'oisd': 'https://big.oisd.nl/domainswild',
-            'hagezi': 'https://raw.githubusercontent.com/hagezi/dns-blocklists/main/wildcard/pro.txt',
-            'firebog-ticked': 'https://v.firebog.net/hosts/lists.php?type=tick',
-            'adguard-dns': 'https://adguardteam.github.io/AdGuardSDNSFilter/Filters/filter.txt',
-            'nocoin': 'https://raw.githubusercontent.com/hoshsadiq/adblock-nocoin-list/master/hosts.txt',
+        // Blocklist definitions with metadata
+        this.blocklistDefinitions = {
+            'stevenblack': {
+                name: 'StevenBlack Unified',
+                description: 'Comprehensive hosts file combining multiple sources.',
+                url: 'https://raw.githubusercontent.com/StevenBlack/hosts/master/hosts',
+                badge: 'default',
+                badgeText: 'Default',
+                estimatedDomains: '~130k'
+            },
+            'oisd': {
+                name: 'OISD Big',
+                description: 'One of the most popular lists. Blocks ads, trackers, malware.',
+                url: 'https://big.oisd.nl/domainswild',
+                badge: 'popular',
+                badgeText: 'Popular',
+                estimatedDomains: '~200k'
+            },
+            'hagezi': {
+                name: 'Hagezi Multi Pro',
+                description: 'Balanced list for ads, tracking, analytics, and telemetry.',
+                url: 'https://raw.githubusercontent.com/hagezi/dns-blocklists/main/wildcard/pro.txt',
+                badge: 'popular',
+                badgeText: 'Popular',
+                estimatedDomains: '~300k'
+            },
+            'firebog-ticked': {
+                name: 'Firebog Ticked Lists',
+                description: 'Curated collection of safe-to-use lists from The Firebog.',
+                url: 'https://v.firebog.net/hosts/lists.php?type=tick',
+                badge: null,
+                estimatedDomains: '~500k'
+            },
+            'adguard-dns': {
+                name: 'AdGuard DNS Filter',
+                description: "AdGuard's curated filter for DNS-level blocking.",
+                url: 'https://adguardteam.github.io/AdGuardSDNSFilter/Filters/filter.txt',
+                badge: null,
+                estimatedDomains: '~50k'
+            },
+            'nocoin': {
+                name: 'NoCoin + Malware',
+                description: 'Blocks cryptocurrency miners and malware domains.',
+                url: 'https://raw.githubusercontent.com/hoshsadiq/adblock-nocoin-list/master/hosts.txt',
+                badge: null,
+                estimatedDomains: '~10k'
+            }
         };
+
+        // Blocklist URLs mapping (keep for backward compatibility)
+        this.blocklistUrls = Object.fromEntries(
+            Object.entries(this.blocklistDefinitions).map(([k, v]) => [k, v.url])
+        );
+
+        // Store for loaded domains and customizations
+        this.blocklistDomains = {}; // { listId: ['domain1.com', 'domain2.com', ...] }
+        this.blocklistExclusions = {}; // { listId: ['excluded-domain.com', ...] }
+        this.blocklistAdditions = {}; // { listId: ['added-domain.com', ...] }
+        this.customBlocklists = []; // [{ id: 'custom-1', name: 'My List', domains: [...] }]
+
         this.configPreview = null;
         this.installWs = null;
 
@@ -43,6 +94,7 @@ class WizardApp {
         this.applyTheme();
         this.bindEvents();
         await this.loadSavedState();
+        this.renderBlocklists();
         this.updateUI();
         await this.runPrerequisiteChecks();
         await this.checkExistingInstallation();
@@ -261,6 +313,11 @@ class WizardApp {
         // Continue to dashboard
         document.getElementById('continueToDashboard').addEventListener('click', () => {
             window.open(document.getElementById('dashboardLink').href, '_blank');
+        });
+
+        // Custom blocklist button
+        document.getElementById('addCustomBlocklist').addEventListener('click', () => {
+            this.showCustomBlocklistForm();
         });
     }
 
@@ -502,6 +559,469 @@ class WizardApp {
         }
     }
 
+    // Blocklist Management Methods
+    renderBlocklists() {
+        const container = document.getElementById('blocklistPresets');
+        container.innerHTML = '';
+
+        // Render predefined blocklists
+        for (const [id, def] of Object.entries(this.blocklistDefinitions)) {
+            container.appendChild(this.createBlocklistCard(id, def, false));
+        }
+
+        // Render custom blocklists
+        for (const custom of this.customBlocklists) {
+            container.appendChild(this.createBlocklistCard(custom.id, {
+                name: custom.name,
+                description: custom.description || 'Custom blocklist',
+                badge: 'custom',
+                badgeText: 'Custom',
+                estimatedDomains: `${custom.domains.length} domains`
+            }, true, custom.domains));
+        }
+    }
+
+    createBlocklistCard(id, def, isCustom = false, preloadedDomains = null) {
+        const card = document.createElement('div');
+        card.className = `blocklist-card-expandable${isCustom ? ' custom-list' : ''}`;
+        card.dataset.listId = id;
+
+        const isChecked = this.state.blocklists.includes(id);
+
+        card.innerHTML = `
+            <div class="blocklist-main-row">
+                <input type="checkbox" class="blocklist-main-checkbox" name="blocklist" value="${id}" ${isChecked ? 'checked' : ''}>
+                <div class="blocklist-main-content">
+                    <div class="blocklist-main-header">
+                        <strong>${def.name}</strong>
+                        ${def.badge ? `<span class="blocklist-badge ${def.badge}">${def.badgeText}</span>` : ''}
+                        <span class="domain-count-badge">${def.estimatedDomains}</span>
+                    </div>
+                    <p>${def.description}</p>
+                </div>
+                <button class="blocklist-expand-btn" title="View and customize domains">
+                    <svg viewBox="0 0 24 24" fill="currentColor" width="20" height="20">
+                        <path d="M7.41 8.59L12 13.17l4.59-4.58L18 10l-6 6-6-6 1.41-1.41z"/>
+                    </svg>
+                </button>
+            </div>
+            <div class="blocklist-domains-panel">
+                <div class="blocklist-domains-header">
+                    <span>Domains in this list</span>
+                    <div class="blocklist-domains-actions">
+                        <button class="select-all-btn">Select All</button>
+                        <button class="deselect-all-btn">Deselect All</button>
+                        ${isCustom ? '<button class="delete-list-btn" style="color: var(--error);">Delete List</button>' : ''}
+                    </div>
+                </div>
+                <div class="blocklist-domains-list">
+                    <div class="blocklist-loading">
+                        <div class="spinner"></div>
+                        <span>Click to load domains...</span>
+                    </div>
+                </div>
+                <div class="blocklist-add-domain">
+                    <input type="text" placeholder="Add custom domain (e.g., ads.example.com)" class="add-domain-input">
+                    <button class="add-domain-btn">Add</button>
+                </div>
+            </div>
+        `;
+
+        // Store preloaded domains for custom lists
+        if (preloadedDomains) {
+            this.blocklistDomains[id] = preloadedDomains;
+        }
+
+        // Bind events
+        this.bindBlocklistCardEvents(card, id, isCustom);
+
+        return card;
+    }
+
+    bindBlocklistCardEvents(card, listId, isCustom) {
+        const expandBtn = card.querySelector('.blocklist-expand-btn');
+        const mainRow = card.querySelector('.blocklist-main-row');
+        const checkbox = card.querySelector('.blocklist-main-checkbox');
+        const domainsList = card.querySelector('.blocklist-domains-list');
+        const addInput = card.querySelector('.add-domain-input');
+        const addBtn = card.querySelector('.add-domain-btn');
+        const selectAllBtn = card.querySelector('.select-all-btn');
+        const deselectAllBtn = card.querySelector('.deselect-all-btn');
+        const deleteBtn = card.querySelector('.delete-list-btn');
+
+        // Toggle expand
+        expandBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            this.toggleBlocklistExpand(card, listId);
+        });
+
+        // Main row click toggles checkbox (but not when clicking expand)
+        mainRow.addEventListener('click', (e) => {
+            if (e.target !== expandBtn && !expandBtn.contains(e.target)) {
+                checkbox.checked = !checkbox.checked;
+                this.updateBlocklistState();
+            }
+        });
+
+        // Checkbox change
+        checkbox.addEventListener('change', () => {
+            this.updateBlocklistState();
+        });
+
+        // Add domain
+        addBtn.addEventListener('click', () => {
+            this.addDomainToList(listId, addInput.value.trim());
+            addInput.value = '';
+        });
+
+        addInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                this.addDomainToList(listId, addInput.value.trim());
+                addInput.value = '';
+            }
+        });
+
+        // Select/Deselect all
+        selectAllBtn.addEventListener('click', () => {
+            this.setAllDomainsInList(listId, true);
+        });
+
+        deselectAllBtn.addEventListener('click', () => {
+            this.setAllDomainsInList(listId, false);
+        });
+
+        // Delete custom list
+        if (deleteBtn) {
+            deleteBtn.addEventListener('click', () => {
+                this.deleteCustomBlocklist(listId);
+            });
+        }
+    }
+
+    async toggleBlocklistExpand(card, listId) {
+        const isExpanded = card.classList.contains('expanded');
+
+        if (isExpanded) {
+            card.classList.remove('expanded');
+        } else {
+            card.classList.add('expanded');
+
+            // Load domains if not already loaded
+            if (!this.blocklistDomains[listId]) {
+                await this.loadBlocklistDomains(listId);
+            } else {
+                this.renderDomainsList(listId);
+            }
+        }
+    }
+
+    async loadBlocklistDomains(listId) {
+        const card = document.querySelector(`[data-list-id="${listId}"]`);
+        const domainsList = card.querySelector('.blocklist-domains-list');
+
+        domainsList.innerHTML = `
+            <div class="blocklist-loading">
+                <div class="spinner"></div>
+                <span>Loading domains...</span>
+            </div>
+        `;
+
+        try {
+            // For demo purposes, we'll fetch a sample of domains
+            // In production, you'd want to fetch from the actual URL or use a backend proxy
+            const def = this.blocklistDefinitions[listId];
+            if (!def) {
+                // Custom list already has domains loaded
+                this.renderDomainsList(listId);
+                return;
+            }
+
+            // Fetch sample domains (first 100 for display)
+            const response = await API.fetchBlocklistSample(listId);
+            this.blocklistDomains[listId] = response.domains || [];
+            this.renderDomainsList(listId);
+        } catch (e) {
+            console.error('Failed to load blocklist domains:', e);
+            // Show sample domains as fallback
+            this.blocklistDomains[listId] = this.getSampleDomains(listId);
+            this.renderDomainsList(listId);
+        }
+    }
+
+    getSampleDomains(listId) {
+        // Sample domains for demonstration (when API is not available)
+        const samples = {
+            'stevenblack': [
+                'ads.google.com', 'pagead2.googlesyndication.com', 'ad.doubleclick.net',
+                'tracking.example.com', 'analytics.facebook.com', 'pixel.facebook.com',
+                'ads.twitter.com', 'advertising.amazon.com', 'adserver.example.net',
+                'track.example.org', 'metrics.example.com', 'telemetry.microsoft.com'
+            ],
+            'oisd': [
+                'ad.example.com', 'tracker.example.com', 'analytics.example.com',
+                'pixel.tracking.com', 'ads.cdn.example.net', 'marketing.example.org',
+                'beacon.example.com', 'stats.example.com', 'click.example.com'
+            ],
+            'hagezi': [
+                'telemetry.example.com', 'analytics-api.example.com', 'data.collector.net',
+                'tracking-pixel.example.org', 'user-metrics.example.com', 'ad-cdn.example.net'
+            ],
+            'firebog-ticked': [
+                'malware.example.com', 'phishing.example.net', 'suspicious.example.org',
+                'known-bad.example.com', 'threat.example.net', 'dangerous.example.org'
+            ],
+            'adguard-dns': [
+                'ads.adguard-example.com', 'tracker.adguard-example.net',
+                'banner.example.com', 'pop-up.example.net', 'interstitial.example.org'
+            ],
+            'nocoin': [
+                'coinhive.com', 'coin-hive.com', 'cryptoloot.pro', 'crypto-miner.example.net',
+                'miner.example.com', 'coin-pool.example.org', 'mining-script.example.net'
+            ]
+        };
+        return samples[listId] || ['example-domain-1.com', 'example-domain-2.com', 'example-domain-3.com'];
+    }
+
+    renderDomainsList(listId) {
+        const card = document.querySelector(`[data-list-id="${listId}"]`);
+        const domainsList = card.querySelector('.blocklist-domains-list');
+        const domains = this.blocklistDomains[listId] || [];
+        const exclusions = this.blocklistExclusions[listId] || [];
+        const additions = this.blocklistAdditions[listId] || [];
+
+        // Combine original + additions
+        const allDomains = [...domains, ...additions];
+
+        if (allDomains.length === 0) {
+            domainsList.innerHTML = `
+                <div class="blocklist-loading">
+                    <span>No domains loaded. Add custom domains below.</span>
+                </div>
+            `;
+            return;
+        }
+
+        domainsList.innerHTML = allDomains.map(domain => {
+            const isExcluded = exclusions.includes(domain);
+            const isAddition = additions.includes(domain);
+            return `
+                <div class="blocklist-domain-item ${isExcluded ? 'excluded' : ''}" data-domain="${domain}">
+                    <input type="checkbox" ${!isExcluded ? 'checked' : ''} class="domain-checkbox">
+                    <span class="domain-text">${domain}</span>
+                    ${isAddition ? `
+                        <button class="remove-domain" title="Remove custom domain">
+                            <svg viewBox="0 0 24 24" fill="currentColor" width="14" height="14">
+                                <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/>
+                            </svg>
+                        </button>
+                    ` : ''}
+                </div>
+            `;
+        }).join('');
+
+        // Bind domain checkbox events
+        domainsList.querySelectorAll('.domain-checkbox').forEach(cb => {
+            cb.addEventListener('change', (e) => {
+                const item = e.target.closest('.blocklist-domain-item');
+                const domain = item.dataset.domain;
+                this.toggleDomainExclusion(listId, domain, !e.target.checked);
+            });
+        });
+
+        // Bind remove buttons
+        domainsList.querySelectorAll('.remove-domain').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                const item = e.target.closest('.blocklist-domain-item');
+                const domain = item.dataset.domain;
+                this.removeDomainFromList(listId, domain);
+            });
+        });
+
+        // Update domain count badge
+        const countBadge = card.querySelector('.domain-count-badge');
+        const activeCount = allDomains.length - exclusions.length;
+        countBadge.textContent = `${activeCount}/${allDomains.length} active`;
+    }
+
+    toggleDomainExclusion(listId, domain, exclude) {
+        if (!this.blocklistExclusions[listId]) {
+            this.blocklistExclusions[listId] = [];
+        }
+
+        if (exclude) {
+            if (!this.blocklistExclusions[listId].includes(domain)) {
+                this.blocklistExclusions[listId].push(domain);
+            }
+        } else {
+            this.blocklistExclusions[listId] = this.blocklistExclusions[listId].filter(d => d !== domain);
+        }
+
+        // Update visual state
+        const card = document.querySelector(`[data-list-id="${listId}"]`);
+        const item = card.querySelector(`[data-domain="${domain}"]`);
+        if (item) {
+            item.classList.toggle('excluded', exclude);
+        }
+
+        this.renderDomainsList(listId);
+    }
+
+    addDomainToList(listId, domain) {
+        if (!domain) return;
+
+        // Validate domain format
+        const domainRegex = /^[a-zA-Z0-9]([a-zA-Z0-9-]*[a-zA-Z0-9])?(\.[a-zA-Z0-9]([a-zA-Z0-9-]*[a-zA-Z0-9])?)*$/;
+        if (!domainRegex.test(domain)) {
+            alert('Please enter a valid domain name (e.g., ads.example.com)');
+            return;
+        }
+
+        if (!this.blocklistAdditions[listId]) {
+            this.blocklistAdditions[listId] = [];
+        }
+
+        if (!this.blocklistAdditions[listId].includes(domain)) {
+            this.blocklistAdditions[listId].push(domain);
+            this.renderDomainsList(listId);
+        }
+    }
+
+    removeDomainFromList(listId, domain) {
+        if (this.blocklistAdditions[listId]) {
+            this.blocklistAdditions[listId] = this.blocklistAdditions[listId].filter(d => d !== domain);
+            this.renderDomainsList(listId);
+        }
+    }
+
+    setAllDomainsInList(listId, checked) {
+        const domains = this.blocklistDomains[listId] || [];
+        const additions = this.blocklistAdditions[listId] || [];
+        const allDomains = [...domains, ...additions];
+
+        if (checked) {
+            // Clear all exclusions
+            this.blocklistExclusions[listId] = [];
+        } else {
+            // Exclude all domains
+            this.blocklistExclusions[listId] = [...allDomains];
+        }
+
+        this.renderDomainsList(listId);
+    }
+
+    updateBlocklistState() {
+        // Collect selected blocklists
+        this.state.blocklists = Array.from(
+            document.querySelectorAll('.blocklist-main-checkbox:checked')
+        ).map(cb => cb.value);
+    }
+
+    showCustomBlocklistForm() {
+        // Check if form already exists
+        let form = document.querySelector('.custom-blocklist-form');
+        if (form) {
+            form.classList.toggle('active');
+            return;
+        }
+
+        // Create form
+        form = document.createElement('div');
+        form.className = 'custom-blocklist-form active';
+        form.innerHTML = `
+            <h4>Create Custom Blocklist</h4>
+            <div class="form-group">
+                <label>List Name</label>
+                <input type="text" id="customListName" placeholder="My Custom Blocklist">
+            </div>
+            <div class="form-group">
+                <label>Description (optional)</label>
+                <input type="text" id="customListDescription" placeholder="Domains I want to block">
+            </div>
+            <div class="form-group">
+                <label>Domains (one per line)</label>
+                <textarea id="customListDomains" placeholder="ads.example.com&#10;tracking.example.net&#10;spam.example.org"></textarea>
+            </div>
+            <div class="form-actions">
+                <button class="btn btn-secondary" id="cancelCustomList">Cancel</button>
+                <button class="btn btn-primary" id="saveCustomList">Create List</button>
+            </div>
+        `;
+
+        document.querySelector('.custom-blocklist-section').appendChild(form);
+
+        // Bind form events
+        document.getElementById('cancelCustomList').addEventListener('click', () => {
+            form.classList.remove('active');
+        });
+
+        document.getElementById('saveCustomList').addEventListener('click', () => {
+            this.saveCustomBlocklist();
+        });
+    }
+
+    saveCustomBlocklist() {
+        const name = document.getElementById('customListName').value.trim();
+        const description = document.getElementById('customListDescription').value.trim();
+        const domainsText = document.getElementById('customListDomains').value.trim();
+
+        if (!name) {
+            alert('Please enter a name for your blocklist');
+            return;
+        }
+
+        // Parse domains
+        const domains = domainsText
+            .split('\n')
+            .map(d => d.trim())
+            .filter(d => d && !d.startsWith('#'));
+
+        if (domains.length === 0) {
+            alert('Please enter at least one domain');
+            return;
+        }
+
+        // Create custom blocklist
+        const id = `custom-${Date.now()}`;
+        const customList = {
+            id,
+            name,
+            description,
+            domains
+        };
+
+        this.customBlocklists.push(customList);
+        this.blocklistDomains[id] = domains;
+        this.state.blocklists.push(id);
+
+        // Re-render blocklists
+        this.renderBlocklists();
+
+        // Hide form
+        const form = document.querySelector('.custom-blocklist-form');
+        if (form) {
+            form.classList.remove('active');
+            form.querySelector('#customListName').value = '';
+            form.querySelector('#customListDescription').value = '';
+            form.querySelector('#customListDomains').value = '';
+        }
+    }
+
+    deleteCustomBlocklist(listId) {
+        if (!confirm('Are you sure you want to delete this custom blocklist?')) {
+            return;
+        }
+
+        // Remove from arrays
+        this.customBlocklists = this.customBlocklists.filter(c => c.id !== listId);
+        this.state.blocklists = this.state.blocklists.filter(b => b !== listId);
+        delete this.blocklistDomains[listId];
+        delete this.blocklistExclusions[listId];
+        delete this.blocklistAdditions[listId];
+
+        // Re-render
+        this.renderBlocklists();
+    }
+
     collectFormData() {
         // Collect data from current step's form
         const step = this.currentStep;
@@ -523,10 +1043,13 @@ class WizardApp {
                     this.state.custom_dns = document.getElementById('customDnsInput').value;
                 }
             }
-            // Collect selected blocklists
-            this.state.blocklists = Array.from(
-                document.querySelectorAll('input[name="blocklist"]:checked')
-            ).map(cb => cb.value);
+            // Collect selected blocklists from expandable cards
+            this.updateBlocklistState();
+
+            // Store customizations in state for backend
+            this.state.blocklist_exclusions = this.blocklistExclusions;
+            this.state.blocklist_additions = this.blocklistAdditions;
+            this.state.custom_blocklists = this.customBlocklists;
         } else if (step === 5) {
             this.state.dhcp_enabled = document.getElementById('dhcpEnabled').checked;
             if (this.state.dhcp_enabled) {
@@ -599,24 +1122,41 @@ class WizardApp {
         const table = document.getElementById('summaryTable').querySelector('tbody');
         table.innerHTML = '';
 
-        // Blocklist names mapping
-        const blocklistNames = {
-            'stevenblack': 'StevenBlack Unified',
-            'oisd': 'OISD Big',
-            'hagezi': 'Hagezi Multi Pro',
-            'firebog-ticked': 'Firebog Ticked',
-            'adguard-dns': 'AdGuard DNS',
-            'nocoin': 'NoCoin + Malware',
-        };
+        // Build blocklist summary
+        let blocklistSummary = '';
+        if (this.state.blocklists.length > 0) {
+            const listNames = this.state.blocklists.map(id => {
+                const def = this.blocklistDefinitions[id];
+                if (def) return def.name;
+                const custom = this.customBlocklists.find(c => c.id === id);
+                if (custom) return `${custom.name} (custom)`;
+                return id;
+            });
+            blocklistSummary = listNames.join(', ');
+
+            // Count customizations
+            let totalExclusions = 0;
+            let totalAdditions = 0;
+            for (const listId of this.state.blocklists) {
+                totalExclusions += (this.blocklistExclusions[listId] || []).length;
+                totalAdditions += (this.blocklistAdditions[listId] || []).length;
+            }
+            if (totalExclusions > 0 || totalAdditions > 0) {
+                const mods = [];
+                if (totalAdditions > 0) mods.push(`+${totalAdditions} added`);
+                if (totalExclusions > 0) mods.push(`-${totalExclusions} excluded`);
+                blocklistSummary += ` (${mods.join(', ')})`;
+            }
+        } else {
+            blocklistSummary = 'Default only';
+        }
 
         const rows = [
             ['Deployment', this.state.deployment === 'docker' ? 'Docker' : 'Bare Metal'],
             ['Pi-hole IP', this.state.pihole_ip || 'Not set'],
             ['DNS Resolver', this.state.enable_unbound ? 'Unbound (Recursive)' : this.state.upstream_dns],
             ['IPv6', this.state.ipv6 ? 'Enabled' : 'Disabled'],
-            ['Blocklists', this.state.blocklists.length > 0
-                ? this.state.blocklists.map(id => blocklistNames[id] || id).join(', ')
-                : 'Default only'],
+            ['Blocklists', blocklistSummary],
             ['DHCP Server', this.state.dhcp_enabled ? 'Enabled' : 'Disabled'],
             ['Web Password', this.state.web_password ? 'Set' : 'Not set'],
         ];
@@ -965,10 +1505,19 @@ class WizardApp {
             document.getElementById('dhcpRouter').value = this.state.dhcp_router;
         }
 
-        // Blocklists
-        document.querySelectorAll('input[name="blocklist"]').forEach(cb => {
-            cb.checked = this.state.blocklists.includes(cb.value);
-        });
+        // Restore blocklist customizations
+        if (this.state.blocklist_exclusions) {
+            this.blocklistExclusions = this.state.blocklist_exclusions;
+        }
+        if (this.state.blocklist_additions) {
+            this.blocklistAdditions = this.state.blocklist_additions;
+        }
+        if (this.state.custom_blocklists) {
+            this.customBlocklists = this.state.custom_blocklists;
+        }
+
+        // Re-render blocklists with state
+        this.renderBlocklists();
 
         // Update UI states
         this.updateDeploymentUI();
