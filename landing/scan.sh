@@ -202,12 +202,17 @@ if [ ${#FOUND_PIS[@]} -eq 0 ]; then
         echo -e "${GREEN}  Connecting to $manual_ip...${NC}"
         echo -e "${GREEN}══════════════════════════════════════════════════════════${NC}"
         echo ""
-        echo -e "  ${YELLOW}Default username:${NC} pi"
-        echo -e "  ${YELLOW}Default password:${NC} raspberry (change it after!)"
+        echo -e "  ${CYAN}What username did you set up on your Pi?${NC}"
+        echo -e "  ${YELLOW}(This is the username you chose in Raspberry Pi Imager)${NC}"
+        echo ""
+        echo -n "  Username [pi]: "
+        read -r ssh_user < /dev/tty
+        ssh_user="${ssh_user:-pi}"
         echo ""
         echo -e "  ${BLUE}Once connected, the installer will run automatically.${NC}"
+        echo -e "  ${YELLOW}Enter the password you set during Pi setup.${NC}"
         echo ""
-        exec ssh -t "pi@$manual_ip" "curl -sSL https://pihole-wizard.com/install.sh | bash" < /dev/tty
+        exec ssh -t "${ssh_user}@$manual_ip" "curl -sSL https://pihole-wizard.com/install.sh | bash" < /dev/tty
     else
         echo -e "${RED}Invalid IP address format. Please try again.${NC}"
         exit 1
@@ -254,12 +259,17 @@ else
     echo -e "${GREEN}  Connecting to $SELECTED_IP...${NC}"
     echo -e "${GREEN}══════════════════════════════════════════════════════════${NC}"
     echo ""
-    echo -e "  ${YELLOW}Default username:${NC} pi"
-    echo -e "  ${YELLOW}Default password:${NC} raspberry (change it after!)"
+    echo -e "  ${CYAN}What username did you set up on your Pi?${NC}"
+    echo -e "  ${YELLOW}(This is the username you chose in Raspberry Pi Imager)${NC}"
+    echo ""
+    echo -n "  Username [pi]: "
+    read -r ssh_user < /dev/tty
+    ssh_user="${ssh_user:-pi}"
     echo ""
     echo -e "  ${BLUE}Once connected, the installer will run automatically.${NC}"
+    echo -e "  ${YELLOW}Enter the password you set during Pi setup.${NC}"
     echo ""
 
     # SSH in and run the installer (exec to properly handle stdin/tty)
-    exec ssh -t "pi@$SELECTED_IP" "curl -sSL https://pihole-wizard.com/install.sh | bash" < /dev/tty
+    exec ssh -t "${ssh_user}@$SELECTED_IP" "curl -sSL https://pihole-wizard.com/install.sh | bash" < /dev/tty
 fi
