@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            width: 1200px;
+            height: 630px;
+            background: #0f172a;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            font-family: 'Courier New', monospace;
+        }
+        .container {
+            text-align: center;
+        }
+        .ascii-box {
+            color: #3b82f6;
+            font-size: 18px;
+            line-height: 1.2;
+            margin-bottom: 24px;
+            white-space: pre;
+        }
+        h1 {
+            color: #fbbf24;
+            font-size: 64px;
+            margin-bottom: 16px;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            font-weight: 700;
+        }
+        .tagline {
+            color: #f8fafc;
+            font-size: 28px;
+            margin-bottom: 8px;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        }
+        .subtitle {
+            color: #94a3b8;
+            font-size: 22px;
+            margin-bottom: 32px;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        }
+        .command {
+            background: #1e293b;
+            border-radius: 8px;
+            padding: 16px 32px;
+            display: inline-block;
+        }
+        .command code {
+            color: #3b82f6;
+            font-size: 20px;
+        }
+        .ascii-bottom {
+            color: #3b82f6;
+            font-size: 18px;
+            line-height: 1.2;
+            margin-top: 24px;
+            white-space: pre;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="ascii-box">╔══════════════════════════════════════════════════════════════╗</div>
+        <h1>Pi-hole Wizard</h1>
+        <p class="tagline">Block ads on every device in your home.</p>
+        <p class="subtitle">One command. No technical knowledge needed.</p>
+        <div class="command">
+            <code>curl -sSL pihole-wizard.com/install.sh | bash</code>
+        </div>
+        <div class="ascii-bottom">╚══════════════════════════════════════════════════════════════╝</div>
+    </div>
+</body>
+</html>

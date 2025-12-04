@@ -4,6 +4,7 @@
 # This script installs Docker (if needed) and runs the Pi-hole Wizard web app
 #
 # Usage: curl -sSL https://pihole-wizard.com/install.sh | bash
+# Uninstall: curl -sSL https://pihole-wizard.com/install.sh | bash -s -- --uninstall
 #
 
 set -e
@@ -14,6 +15,71 @@ GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
 BLUE='\033[0;34m'
 NC='\033[0m' # No Color
+
+# Uninstall function
+uninstall() {
+    echo ""
+    echo -e "${YELLOW}╔═══════════════════════════════════════════╗${NC}"
+    echo -e "${YELLOW}║       Pi-hole Wizard Uninstaller          ║${NC}"
+    echo -e "${YELLOW}╚═══════════════════════════════════════════╝${NC}"
+    echo ""
+
+    INSTALL_DIR="$HOME/pihole-wizard"
+
+    if [ ! -d "$INSTALL_DIR" ]; then
+        echo -e "${YELLOW}Pi-hole Wizard installation not found at $INSTALL_DIR${NC}"
+        exit 0
+    fi
+
+    echo -e "${YELLOW}This will remove:${NC}"
+    echo -e "  • Pi-hole Wizard container"
+    echo -e "  • Pi-hole Wizard Docker image"
+    echo -e "  • Installation directory ($INSTALL_DIR)"
+    echo ""
+    echo -e "${BLUE}Note:${NC} This will NOT remove Pi-hole itself or Docker."
+    echo ""
+
+    # Check for TTY
+    if [ -t 0 ] || [ -e /dev/tty ]; then
+        exec 3</dev/tty
+        read -p "Are you sure you want to uninstall? [y/N]: " -n 1 -r REPLY <&3
+        echo ""
+        if [[ ! $REPLY =~ ^[Yy]$ ]]; then
+            echo -e "${BLUE}Uninstall cancelled.${NC}"
+            exit 0
+        fi
+    fi
+
+    echo ""
+    echo -e "${YELLOW}→${NC} Stopping Pi-hole Wizard..."
+    cd "$INSTALL_DIR" 2>/dev/null && {
+        docker compose down 2>/dev/null || docker-compose down 2>/dev/null || true
+    }
+
+    echo -e "${YELLOW}→${NC} Removing Docker container..."
+    docker rm -f pihole-wizard 2>/dev/null || true
+
+    echo -e "${YELLOW}→${NC} Removing Docker image..."
+    docker rmi ghcr.io/anishj9/pihole-wizard:latest 2>/dev/null || true
+
+    echo -e "${YELLOW}→${NC} Removing installation directory..."
+    rm -rf "$INSTALL_DIR"
+
+    echo ""
+    echo -e "${GREEN}══════════════════════════════════════════════════════════${NC}"
+    echo -e "${GREEN}  Pi-hole Wizard has been uninstalled.${NC}"
+    echo -e "${GREEN}══════════════════════════════════════════════════════════${NC}"
+    echo ""
+    echo -e "  Thanks for trying Pi-hole Wizard!"
+    echo -e "  If you have feedback, visit: ${BLUE}https://github.com/AnishJ9/pihole-wizard-web${NC}"
+    echo ""
+    exit 0
+}
+
+# Check for uninstall flag
+if [ "$1" = "--uninstall" ] || [ "$1" = "-u" ] || [ "$1" = "uninstall" ]; then
+    uninstall
+fi
 
 echo ""
 echo -e "${BLUE}╔═══════════════════════════════════════════╗${NC}"
@@ -387,7 +453,8 @@ EOF
     echo -e "  ${YELLOW}Tip:${NC} You can open this URL on your phone, tablet,"
     echo -e "  or any device connected to your network."
     echo ""
-    echo -e "  To stop the wizard later: ${GREEN}cd $INSTALL_DIR && docker compose down${NC}"
+    echo -e "  To stop the wizard:    ${GREEN}cd $INSTALL_DIR && docker compose down${NC}"
+    echo -e "  To uninstall:          ${GREEN}curl -sSL pihole-wizard.com/install.sh | bash -s -- --uninstall${NC}"
     echo ""
 
     # Try to open browser (works on desktop Linux, ignored on headless)
