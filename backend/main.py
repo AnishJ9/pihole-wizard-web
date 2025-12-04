@@ -55,7 +55,22 @@ async def serve_index():
 @app.get("/favicon.svg")
 async def serve_favicon():
     """Serve the favicon."""
-    return FileResponse(FRONTEND_DIR / "favicon.svg", media_type="image/svg+xml")
+    return FileResponse(
+        FRONTEND_DIR / "favicon.svg",
+        media_type="image/svg+xml",
+        headers={"Cache-Control": "public, max-age=3600"}
+    )
+
+
+@app.get("/favicon.ico")
+async def serve_favicon_ico():
+    """Serve the favicon for browsers that request .ico format."""
+    # Return the SVG with appropriate headers - modern browsers handle this
+    return FileResponse(
+        FRONTEND_DIR / "favicon.svg",
+        media_type="image/svg+xml",
+        headers={"Cache-Control": "public, max-age=3600"}
+    )
 
 
 @app.get("/health")
