@@ -61,7 +61,8 @@ if ! detect_device; then
     echo ""
     # Check if we have a terminal for interactive input
     if [ -t 0 ] || [ -e /dev/tty ]; then
-        exec < /dev/tty
+        # Redirect stdin from terminal for all subsequent reads
+        exec 3</dev/tty
 
         echo -e "What would you like to do?"
         echo ""
@@ -69,13 +70,15 @@ if ! detect_device; then
         echo -e "  ${GREEN}2)${NC} Continue anyway (I know what I'm doing)"
         echo -e "  ${GREEN}3)${NC} Exit"
         echo ""
-        read -p "Choose [1/2/3]: " -n 1 -r REPLY
+        read -p "Choose [1/2/3]: " -n 1 -r REPLY <&3
         echo ""
 
         case $REPLY in
             1)
                 echo ""
                 echo -e "${BLUE}Let's connect to your Raspberry Pi!${NC}"
+                echo ""
+                echo -e "${YELLOW}Note:${NC} Make sure this computer is on the same Wi-Fi/network as your Pi."
                 echo ""
 
                 # Try to find Raspberry Pi on the network
@@ -142,10 +145,10 @@ if ! detect_device; then
                     echo ""
                     echo -e "  ${GREEN}m)${NC} Enter IP manually"
                     echo ""
-                    read -p "Choose an option: " PI_CHOICE
+                    read -p "Choose an option: " PI_CHOICE <&3
 
                     if [ "$PI_CHOICE" = "m" ] || [ "$PI_CHOICE" = "M" ]; then
-                        read -p "Enter your Pi's IP address: " PI_IP
+                        read -p "Enter your Pi's IP address: " PI_IP <&3
                     else
                         PI_IP=$(echo "$FOUND_PIS" | sed -n "${PI_CHOICE}p")
                     fi
@@ -159,14 +162,14 @@ if ! detect_device; then
                     echo -e "  • Look at your Pi's screen (if connected) - run ${BLUE}hostname -I${NC}"
                     echo -e "  • Use a network scanner app on your phone"
                     echo ""
-                    read -p "Enter your Pi's IP address: " PI_IP
+                    read -p "Enter your Pi's IP address: " PI_IP <&3
                 fi
 
                 if [ -z "$PI_IP" ]; then
                     echo -e "${RED}No IP address entered. Exiting.${NC}"
                     exit 1
                 fi
-                read -p "Enter username (default: pi): " PI_USER
+                read -p "Enter username (default: pi): " PI_USER <&3
                 PI_USER=${PI_USER:-pi}
                 echo ""
                 echo -e "${YELLOW}Connecting to ${PI_USER}@${PI_IP}...${NC}"
