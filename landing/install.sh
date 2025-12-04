@@ -57,22 +57,48 @@ if ! detect_device; then
     echo -e "${YELLOW}║                                                               ║${NC}"
     echo -e "${YELLOW}║  Pi-hole Wizard is designed to run on your Raspberry Pi,     ║${NC}"
     echo -e "${YELLOW}║  not your personal computer.                                  ║${NC}"
-    echo -e "${YELLOW}║                                                               ║${NC}"
-    echo -e "${YELLOW}║  To install Pi-hole:                                          ║${NC}"
-    echo -e "${YELLOW}║  1. SSH into your Raspberry Pi                                ║${NC}"
-    echo -e "${YELLOW}║  2. Run this command there instead                            ║${NC}"
-    echo -e "${YELLOW}║                                                               ║${NC}"
-    echo -e "${YELLOW}║  Need help? Visit: ${NC}${BLUE}https://pihole-wizard.com/#ssh-help${NC}${YELLOW}        ║${NC}"
-    echo -e "${YELLOW}║                                                               ║${NC}"
     echo -e "${YELLOW}╚═══════════════════════════════════════════════════════════════╝${NC}"
     echo ""
-    read -p "Continue anyway? (y/N) " -n 1 -r
+    echo -e "What would you like to do?"
     echo ""
-    if [[ ! $REPLY =~ ^[Yy]$ ]]; then
-        echo -e "${BLUE}No problem! Run this on your Raspberry Pi when you're ready.${NC}"
-        exit 0
-    fi
+    echo -e "  ${GREEN}1)${NC} Connect to my Raspberry Pi now (SSH)"
+    echo -e "  ${GREEN}2)${NC} Continue anyway (I know what I'm doing)"
+    echo -e "  ${GREEN}3)${NC} Exit"
     echo ""
+    read -p "Choose [1/2/3]: " -n 1 -r
+    echo ""
+
+    case $REPLY in
+        1)
+            echo ""
+            echo -e "${BLUE}Let's connect to your Raspberry Pi!${NC}"
+            echo ""
+            read -p "Enter your Pi's IP address (e.g., 192.168.1.100): " PI_IP
+            if [ -z "$PI_IP" ]; then
+                echo -e "${RED}No IP address entered. Exiting.${NC}"
+                exit 1
+            fi
+            read -p "Enter username (default: pi): " PI_USER
+            PI_USER=${PI_USER:-pi}
+            echo ""
+            echo -e "${YELLOW}Connecting to ${PI_USER}@${PI_IP}...${NC}"
+            echo -e "${YELLOW}Once connected, the installer will run automatically.${NC}"
+            echo ""
+            # SSH into Pi and run the installer there
+            ssh -t "${PI_USER}@${PI_IP}" "curl -sSL https://pihole-wizard.com/install.sh | bash"
+            exit $?
+            ;;
+        2)
+            echo ""
+            echo -e "${YELLOW}Continuing on this device...${NC}"
+            echo ""
+            ;;
+        *)
+            echo ""
+            echo -e "${BLUE}No problem! Run this on your Raspberry Pi when you're ready.${NC}"
+            exit 0
+            ;;
+    esac
 fi
 
 # Check if running as root
