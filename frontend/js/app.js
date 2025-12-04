@@ -45,6 +45,20 @@ class WizardApp {
         await this.loadSavedState();
         this.updateUI();
         await this.runPrerequisiteChecks();
+        await this.checkExistingInstallation();
+    }
+
+    async checkExistingInstallation() {
+        // Check if Pi-hole is already installed to show/hide Update button
+        try {
+            const result = await API.checkForUpdates();
+            if (result.has_existing_install) {
+                document.getElementById('updateBtn').style.display = 'inline-flex';
+            }
+        } catch (e) {
+            // Silently fail - just don't show the update button
+            console.log('Could not check for existing installation:', e.message);
+        }
     }
 
     // Theme management
