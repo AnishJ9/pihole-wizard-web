@@ -141,7 +141,7 @@ class WizardApp {
         }
     }
 
-    updateUI() {
+    updateUI(direction = 'forward') {
         // Update step indicators
         document.querySelectorAll('.step').forEach(step => {
             const stepNum = parseInt(step.dataset.step);
@@ -153,13 +153,30 @@ class WizardApp {
             }
         });
 
-        // Update step content
-        document.querySelectorAll('.step-content').forEach(content => {
-            content.classList.remove('active');
-        });
-        const activeContent = document.querySelector(`.step-content[data-step="${this.currentStep}"]`);
-        if (activeContent) {
-            activeContent.classList.add('active');
+        // Update step content with direction-aware animation
+        const currentActive = document.querySelector('.step-content.active');
+        const newContent = document.querySelector(`.step-content[data-step="${this.currentStep}"]`);
+
+        // Animate out old content
+        if (currentActive && currentActive !== newContent) {
+            currentActive.classList.remove('active', 'slide-left');
+            currentActive.classList.add('exiting');
+            if (direction === 'back') {
+                currentActive.classList.add('slide-left');
+            }
+            // Remove exiting class after animation
+            setTimeout(() => {
+                currentActive.classList.remove('exiting', 'slide-left');
+            }, 350);
+        }
+
+        // Animate in new content
+        if (newContent) {
+            newContent.classList.remove('slide-left');
+            if (direction === 'back') {
+                newContent.classList.add('slide-left');
+            }
+            newContent.classList.add('active');
         }
 
         // Update navigation buttons
@@ -358,7 +375,7 @@ class WizardApp {
 
         if (this.currentStep < this.totalSteps) {
             this.currentStep++;
-            this.updateUI();
+            this.updateUI('forward');
 
             // Load config preview on review step
             if (this.currentStep === 7) {
@@ -370,14 +387,15 @@ class WizardApp {
     prevStep() {
         if (this.currentStep > 1) {
             this.currentStep--;
-            this.updateUI();
+            this.updateUI('back');
         }
     }
 
     goToStep(step) {
         this.collectFormData();
+        const direction = step > this.currentStep ? 'forward' : 'back';
         this.currentStep = step;
-        this.updateUI();
+        this.updateUI(direction);
 
         if (step === 7) {
             this.loadConfigPreview();

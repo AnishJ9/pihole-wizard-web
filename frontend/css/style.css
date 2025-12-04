@@ -270,6 +270,8 @@ body {
     max-width: 800px;
     margin: 0 auto;
     width: 100%;
+    position: relative;
+    overflow: hidden;
 }
 
 .step-content {
@@ -278,12 +280,42 @@ body {
 
 .step-content.active {
     display: block;
-    animation: fadeIn 0.3s ease;
+    animation: slideInRight 0.35s ease-out;
 }
 
-@keyframes fadeIn {
-    from { opacity: 0; transform: translateY(10px); }
-    to { opacity: 1; transform: translateY(0); }
+.step-content.active.slide-left {
+    animation: slideInLeft 0.35s ease-out;
+}
+
+.step-content.exiting {
+    display: block;
+    position: absolute;
+    width: 100%;
+    animation: slideOutLeft 0.35s ease-out forwards;
+}
+
+.step-content.exiting.slide-left {
+    animation: slideOutRight 0.35s ease-out forwards;
+}
+
+@keyframes slideInRight {
+    from { opacity: 0; transform: translateX(30px); }
+    to { opacity: 1; transform: translateX(0); }
+}
+
+@keyframes slideInLeft {
+    from { opacity: 0; transform: translateX(-30px); }
+    to { opacity: 1; transform: translateX(0); }
+}
+
+@keyframes slideOutLeft {
+    from { opacity: 1; transform: translateX(0); }
+    to { opacity: 0; transform: translateX(-30px); }
+}
+
+@keyframes slideOutRight {
+    from { opacity: 1; transform: translateX(0); }
+    to { opacity: 0; transform: translateX(30px); }
 }
 
 .step-content h2 {
