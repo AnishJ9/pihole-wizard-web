@@ -145,7 +145,7 @@ main() {
 
 services:
   pihole-wizard:
-    image: ghcr.io/anishj9/pihole-wizard:latest
+    image: ghcr.io/anishj9/pihole-wizard-web:latest
     container_name: pihole-wizard
     ports:
       - "8080:8080"
