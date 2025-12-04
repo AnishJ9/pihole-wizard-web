@@ -1267,7 +1267,9 @@ class WizardApp {
     async startInstallation() {
         // Hide wizard, show progress
         document.querySelector(`.step-content[data-step="7"]`).classList.remove('active');
-        document.getElementById('installProgress').classList.add('active');
+        const progressEl = document.getElementById('installProgress');
+        progressEl.style.display = 'block';
+        progressEl.classList.add('active');
         document.querySelector('.nav-footer').style.display = 'none';
 
         const logsEl = document.getElementById('installLogs');
@@ -1324,14 +1326,20 @@ class WizardApp {
         if (this.installWs) {
             this.installWs.close();
         }
-        document.getElementById('installProgress').classList.remove('active');
+        const progressEl = document.getElementById('installProgress');
+        progressEl.style.display = 'none';
+        progressEl.classList.remove('active');
         document.querySelector(`.step-content[data-step="7"]`).classList.add('active');
-        document.querySelector('.nav-footer').style.display = 'flex';
+        // Footer stays hidden on review page
     }
 
     showSuccessScreen() {
-        document.getElementById('installProgress').classList.remove('active');
-        document.getElementById('successScreen').classList.add('active');
+        const progressEl = document.getElementById('installProgress');
+        progressEl.style.display = 'none';
+        progressEl.classList.remove('active');
+        const successEl = document.getElementById('successScreen');
+        successEl.style.display = 'block';
+        successEl.classList.add('active');
 
         const dashboardLink = document.getElementById('dashboardLink');
         dashboardLink.href = `http://${this.state.pihole_ip}/admin`;
