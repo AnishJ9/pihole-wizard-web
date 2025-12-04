@@ -171,7 +171,15 @@ EOF
 
     # Pull the image
     echo -e "${YELLOW}→${NC} Pulling Docker image (this may take a few minutes)..."
-    if docker compose pull 2>/dev/null || docker-compose pull 2>/dev/null; then
+    # Pull the image
+    COMPOSE_CMD=""
+    if docker compose version &> /dev/null; then
+        COMPOSE_CMD="docker compose"
+    elif command -v docker-compose &> /dev/null; then
+        COMPOSE_CMD="docker-compose"
+    fi
+
+    if [ -n "$COMPOSE_CMD" ] && $COMPOSE_CMD pull; then
         echo -e "${GREEN}✓${NC} Image downloaded"
     else
         echo -e "${YELLOW}!${NC} Could not pull image. Trying to build locally..."
@@ -179,7 +187,11 @@ EOF
         if command -v git &> /dev/null; then
             rm -rf docker-compose.yml
             git clone https://github.com/AnishJ9/pihole-wizard-web.git .
-            docker compose build 2>/dev/null || docker-compose build
+            if docker compose version &> /dev/null; then
+                docker compose build
+            else
+                docker-compose build
+            fi
         else
             echo -e "${RED}Git not installed. Please install git and try again.${NC}"
             exit 1
@@ -188,7 +200,15 @@ EOF
 
     # Start the wizard
     echo -e "${YELLOW}→${NC} Starting Pi-hole Wizard..."
-    docker compose up -d 2>/dev/null || docker-compose up -d
+    if docker compose version &> /dev/null; then
+        docker compose up -d
+    elif command -v docker-compose &> /dev/null; then
+        docker-compose up -d
+    else
+        echo -e "${RED}Error: Neither 'docker compose' nor 'docker-compose' found.${NC}"
+        echo -e "${YELLOW}Try running: sudo apt install docker-compose-plugin${NC}"
+        exit 1
+    fi
 
     # Wait for startup
     echo -e "${YELLOW}→${NC} Waiting for wizard to start..."
