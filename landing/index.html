@@ -960,18 +960,16 @@
 
         async function loadInstallCounter() {
             try {
-                // Fetch from the backend API
-                const response = await fetch('https://pihole-wizard-web-production.up.railway.app/api/stats');
+                const response = await fetch('/api/stats');
                 if (!response.ok) return;
 
-                const stats = await response.json();
-                const count = stats.installs_completed || 0;
+                const data = await response.json();
+                const count = data.installs_completed || 0;
 
                 if (count > 0) {
                     const counterEl = document.getElementById('installCounter');
                     const countEl = document.getElementById('installCount');
 
-                    // Format number nicely
                     let formatted;
                     if (count >= 1000000) {
                         formatted = (count / 1000000).toFixed(1) + 'M';
