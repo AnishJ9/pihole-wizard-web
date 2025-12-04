@@ -408,6 +408,9 @@ class WizardApp {
                 document.getElementById('dhcpRouter').value = result.detected_gateway;
             }
 
+            // Show static IP warning if not confirmed static
+            this.showStaticIpWarning(result.is_static_ip, result.static_ip_message);
+
             // Auto-suggest DHCP range
             if (result.detected_ip) {
                 const prefix = result.detected_ip.split('.').slice(0, 3).join('.');
@@ -464,6 +467,39 @@ class WizardApp {
             `;
             container.appendChild(card);
         });
+    }
+
+    showStaticIpWarning(isStatic, message) {
+        // Show warning in Step 3 (Network Configuration) if IP is not confirmed static
+        const warningEl = document.getElementById('staticIpWarning');
+        if (warningEl) {
+            if (isStatic) {
+                warningEl.innerHTML = `
+                    <div class="info-box success">
+                        <svg viewBox="0 0 24 24" fill="currentColor" width="20" height="20">
+                            <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/>
+                        </svg>
+                        <span><strong>Static IP confirmed:</strong> ${message}</span>
+                    </div>
+                `;
+            } else {
+                warningEl.innerHTML = `
+                    <div class="warning-box">
+                        <svg viewBox="0 0 24 24" fill="currentColor" width="20" height="20">
+                            <path d="M1 21h22L12 2 1 21zm12-3h-2v-2h2v2zm0-4h-2v-4h2v4z"/>
+                        </svg>
+                        <div>
+                            <strong>Static IP not detected:</strong> ${message}
+                            <p style="margin-top: 0.5rem; font-size: 0.875rem;">Pi-hole needs a static IP so devices can always find it. Either:</p>
+                            <ul style="margin-top: 0.25rem; margin-left: 1.25rem; font-size: 0.875rem;">
+                                <li>Set a static IP in your Pi's network settings, or</li>
+                                <li>Create a DHCP reservation for this device on your router</li>
+                            </ul>
+                        </div>
+                    </div>
+                `;
+            }
+        }
     }
 
     collectFormData() {

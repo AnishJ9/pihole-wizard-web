@@ -29,6 +29,9 @@ class PrerequisiteChecker:
         detected_ip, detected_interface = self.detect_network()
         detected_gateway = self.detect_gateway()
 
+        # Check if IP is static
+        is_static, static_message = self.check_static_ip(detected_interface)
+
         can_proceed = all(c.status != CheckStatus.FAIL for c in checks)
 
         return PrerequisiteResponse(
@@ -37,6 +40,8 @@ class PrerequisiteChecker:
             detected_ip=detected_ip,
             detected_interface=detected_interface,
             detected_gateway=detected_gateway,
+            is_static_ip=is_static,
+            static_ip_message=static_message,
         )
 
     def check_docker(self) -> PrerequisiteCheck:
@@ -206,6 +211,76 @@ class PrerequisiteChecker:
         except Exception:
             pass
         return None
+
+    def check_static_ip(self, interface: Optional[str] = None) -> Tuple[bool, str]:
+        """
+        Check if the current IP appears to be static or DHCP-assigned.
+        Returns (is_static, message).
+        """
+        # Check dhcpcd.conf (Raspberry Pi OS / Debian)
+        try:
+            with open("/etc/dhcpcd.conf", "r") as f:
+                content = f.read()
+                if "static ip_address" in content:
+                    return True, "Static IP configured in /etc/dhcpcd.conf"
+        except FileNotFoundError:
+            pass
+        except Exception:
+            pass
+
+        # Check netplan (Ubuntu)
+        try:
+            import glob
+            for netplan_file in glob.glob("/etc/netplan/*.yaml"):
+                with open(netplan_file, "r") as f:
+                    content = f.read()
+                    if "addresses:" in content and "dhcp4: false" in content.lower():
+                        return True, f"Static IP configured in {netplan_file}"
+                    if "addresses:" in content and "dhcp4:" not in content.lower():
+                        return True, f"Static IP configured in {netplan_file}"
+        except Exception:
+            pass
+
+        # Check NetworkManager (various distros)
+        if interface:
+            try:
+                result = subprocess.run(
+                    ["nmcli", "-t", "-f", "ipv4.method", "connection", "show", interface],
+                    capture_output=True,
+                    text=True,
+                    timeout=5,
+                )
+                if result.returncode == 0 and "manual" in result.stdout.lower():
+                    return True, "Static IP configured via NetworkManager"
+            except Exception:
+                pass
+
+        # Check /etc/network/interfaces (older Debian)
+        try:
+            with open("/etc/network/interfaces", "r") as f:
+                content = f.read()
+                if "static" in content and interface and interface in content:
+                    return True, "Static IP configured in /etc/network/interfaces"
+        except FileNotFoundError:
+            pass
+        except Exception:
+            pass
+
+        # Check for active DHCP lease (indicates DHCP is being used)
+        try:
+            result = subprocess.run(
+                ["ps", "aux"],
+                capture_output=True,
+                text=True,
+                timeout=5,
+            )
+            if "dhclient" in result.stdout or "dhcpcd" in result.stdout:
+                return False, "DHCP client is running - IP may change"
+        except Exception:
+            pass
+
+        # Couldn't determine - assume DHCP for safety
+        return False, "Could not confirm static IP configuration"
 
     def is_raspberry_pi(self) -> bool:
         """Check if the current machine is a Raspberry Pi."""

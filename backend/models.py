@@ -61,6 +61,8 @@ class PrerequisiteResponse(BaseModel):
     detected_ip: Optional[str] = None
     detected_interface: Optional[str] = None
     detected_gateway: Optional[str] = None
+    is_static_ip: bool = False
+    static_ip_message: Optional[str] = None
 
 
 class ConfigFile(BaseModel):
