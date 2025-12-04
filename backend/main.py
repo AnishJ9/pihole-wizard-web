@@ -52,6 +52,12 @@ async def serve_index():
     return FileResponse(FRONTEND_DIR / "index.html")
 
 
+@app.get("/favicon.svg")
+async def serve_favicon():
+    """Serve the favicon."""
+    return FileResponse(FRONTEND_DIR / "favicon.svg", media_type="image/svg+xml")
+
+
 @app.get("/health")
 async def health_check():
     """Health check endpoint for Docker."""
