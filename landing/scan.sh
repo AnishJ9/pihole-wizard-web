@@ -134,16 +134,38 @@ echo ""
 # Display results
 if [ ${#FOUND_PIS[@]} -eq 0 ]; then
     echo -e "${YELLOW}══════════════════════════════════════════════════════════${NC}"
-    echo -e "${YELLOW}  No Raspberry Pi devices found on your network.${NC}"
+    echo -e "${YELLOW}  No Raspberry Pi devices found automatically.${NC}"
     echo -e "${YELLOW}══════════════════════════════════════════════════════════${NC}"
     echo ""
-    echo -e "  Make sure your Raspberry Pi is:"
-    echo -e "  • Powered on and connected to the same network"
-    echo -e "  • Has completed its initial boot (wait 1-2 minutes)"
+    echo -e "  ${CYAN}Diagnostic info:${NC}"
+    echo -e "  • Your IP: ${LOCAL_IP:-unknown}"
+    echo -e "  • Subnet scanned: ${SUBNET:-unknown}.0/24"
     echo ""
-    echo -e "  You can also try:"
+
+    # Show ARP table snippet for debugging
+    echo -e "  ${CYAN}Devices on your network (ARP table):${NC}"
+    if command -v arp &> /dev/null; then
+        arp -a 2>/dev/null | head -10 | while read line; do
+            echo -e "    $line"
+        done
+        arp_count=$(arp -a 2>/dev/null | wc -l | tr -d ' ')
+        echo -e "    ... ($arp_count total devices)"
+    else
+        echo -e "    (arp command not available)"
+    fi
+    echo ""
+
+    echo -e "  ${YELLOW}Possible reasons:${NC}"
+    echo -e "  • Pi is on a different network/VLAN"
+    echo -e "  • Pi has a non-standard MAC address"
+    echo -e "  • Pi hostname was changed from default"
+    echo ""
+    echo -e "  ${CYAN}Try manually:${NC}"
     echo -e "  • Check your router's admin page for connected devices"
-    echo -e "  • Connect a monitor to see the Pi's IP address"
+    echo -e "  • Look for a device named 'raspberrypi' or similar"
+    echo ""
+    echo -e "  ${CYAN}Or if you know your Pi's IP, connect directly:${NC}"
+    echo -e "  ${GREEN}ssh pi@<YOUR_PI_IP>${NC}"
     echo ""
 else
     echo -e "${GREEN}══════════════════════════════════════════════════════════${NC}"
