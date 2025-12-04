@@ -173,31 +173,48 @@ else
     echo -e "${GREEN}══════════════════════════════════════════════════════════${NC}"
     echo ""
 
-    # Display found Pis
+    # Display found Pis with numbers for selection
+    index=1
     for found in "${FOUND_PIS[@]}"; do
         IFS='|' read -r ip hostname method <<< "$found"
         if [ -n "$hostname" ]; then
-            echo -e "  ${CYAN}•${NC} $ip ($hostname)"
+            echo -e "  ${CYAN}[$index]${NC} $ip ($hostname)"
         else
-            echo -e "  ${CYAN}•${NC} $ip"
+            echo -e "  ${CYAN}[$index]${NC} $ip"
         fi
+        ((index++))
     done
 
     echo ""
+
+    # Select Pi if multiple found
+    SELECTED_IP=""
+    if [ ${#FOUND_PIS[@]} -eq 1 ]; then
+        SELECTED_IP=$(echo "${FOUND_PIS[0]}" | cut -d'|' -f1)
+    else
+        echo -e "  ${BLUE}Which Pi do you want to connect to?${NC}"
+        echo -n "  Enter number [1-${#FOUND_PIS[@]}]: "
+        read -r selection
+
+        if [[ "$selection" =~ ^[0-9]+$ ]] && [ "$selection" -ge 1 ] && [ "$selection" -le ${#FOUND_PIS[@]} ]; then
+            SELECTED_IP=$(echo "${FOUND_PIS[$((selection-1))]}" | cut -d'|' -f1)
+        else
+            echo -e "  ${YELLOW}Invalid selection. Using first Pi.${NC}"
+            SELECTED_IP=$(echo "${FOUND_PIS[0]}" | cut -d'|' -f1)
+        fi
+    fi
+
+    echo ""
+    echo -e "${GREEN}══════════════════════════════════════════════════════════${NC}"
+    echo -e "${GREEN}  Connecting to $SELECTED_IP...${NC}"
     echo -e "${GREEN}══════════════════════════════════════════════════════════${NC}"
     echo ""
+    echo -e "  ${YELLOW}Default username:${NC} pi"
+    echo -e "  ${YELLOW}Default password:${NC} raspberry (change it after!)"
+    echo ""
+    echo -e "  ${BLUE}Once connected, the installer will run automatically.${NC}"
+    echo ""
 
-    # Get first Pi IP for instructions
-    FIRST_PI=$(echo "${FOUND_PIS[0]}" | cut -d'|' -f1)
-
-    echo -e "  ${BLUE}Next step:${NC} SSH into your Raspberry Pi and run the installer:"
-    echo ""
-    echo -e "  ${GREEN}ssh pi@$FIRST_PI${NC}"
-    echo ""
-    echo -e "  Then run:"
-    echo ""
-    echo -e "  ${GREEN}curl -sSL https://pihole-wizard.com/install.sh | bash${NC}"
-    echo ""
-    echo -e "  ${YELLOW}Note:${NC} Default password is usually 'raspberry' (change it after!)"
-    echo ""
+    # SSH in and run the installer
+    ssh -t "pi@$SELECTED_IP" "curl -sSL https://pihole-wizard.com/install.sh | bash"
 fi
