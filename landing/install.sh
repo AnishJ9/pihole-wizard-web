@@ -338,6 +338,11 @@ EOF
     echo -e "  ${YELLOW}Tip:${NC} You can open this URL on your phone, tablet,"
     echo -e "  or any device connected to your network."
     echo ""
+    echo -e "  ${CYAN}Note:${NC} Your browser may show 'Not Secure' - this is normal!"
+    echo -e "  The wizard runs on your local network only, not the internet."
+    echo -e "  Your data stays on your home network and is never transmitted"
+    echo -e "  externally. HTTPS isn't needed for local services like this."
+    echo ""
     echo -e "  To stop the wizard later: ${GREEN}cd $INSTALL_DIR && docker compose down${NC}"
     echo ""
 }
