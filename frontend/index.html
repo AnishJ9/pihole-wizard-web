@@ -314,6 +314,26 @@
                 <h2><span class="tooltip-trigger" data-tooltip="Dynamic Host Configuration Protocol - automatically assigns IP addresses to devices on your network so you don't have to configure each one manually.">DHCP</span> Configuration</h2>
                 <p class="step-description">Optionally use Pi-hole as your DHCP server.</p>
 
+                <div class="info-box" style="margin-bottom: 1.5rem;">
+                    <strong>Do I need this?</strong> Most users can skip this. The simpler approach is to set Pi-hole's IP as the DNS server in your router's DHCP settings.
+                    <details style="margin-top: 0.75rem;">
+                        <summary style="cursor: pointer; font-weight: 500;">When to use Pi-hole DHCP</summary>
+                        <div style="margin-top: 0.75rem; padding-left: 0.5rem;">
+                            <p style="margin-bottom: 0.5rem;"><strong>Advantages:</strong></p>
+                            <ul style="margin-left: 1.25rem; margin-bottom: 0.75rem;">
+                                <li><strong>Automatic DNS:</strong> Every device automatically uses Pi-hole - no router config needed</li>
+                                <li><strong>Device names:</strong> See hostnames like "iPhone-Kitchen" instead of just IPs in your logs</li>
+                                <li><strong>Per-device blocking:</strong> Easier to set different rules for specific devices</li>
+                            </ul>
+                            <p style="margin-bottom: 0.5rem;"><strong>Best for:</strong></p>
+                            <ul style="margin-left: 1.25rem;">
+                                <li>Routers that don't let you change DNS settings (some ISP routers)</li>
+                                <li>Users who want detailed per-device statistics</li>
+                            </ul>
+                        </div>
+                    </details>
+                </div>
+
                 <div class="warning-box">
                     <strong>Warning:</strong> If you enable DHCP, you must disable DHCP on your router first!
                     Having two DHCP servers can cause network issues.
