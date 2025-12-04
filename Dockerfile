@@ -3,12 +3,14 @@
 
 FROM python:3.11-slim
 
-# Install system dependencies
+# Install system dependencies (including gcc for building netifaces)
 RUN apt-get update && apt-get install -y \
     curl \
     iproute2 \
     net-tools \
     lsof \
+    gcc \
+    python3-dev \
     && rm -rf /var/lib/apt/lists/*
 
 # Set working directory
